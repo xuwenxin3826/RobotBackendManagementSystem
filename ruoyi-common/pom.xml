@@ -113,6 +113,54 @@
             <artifactId>javax.servlet-api</artifactId>
         </dependency>
 
-    </dependencies>
+        <!-- Jakarta Validation API -->
+<!--        <dependency>-->
+<!--            <groupId>jakarta.validation</groupId>-->
+<!--            <artifactId>jakarta.validation-api</artifactId>-->
+<!--            <version>3.0.2</version>-->
+<!--        </dependency>-->
 
+<!--        &lt;!&ndash; Hibernate Validator 实现 &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>org.hibernate.validator</groupId>-->
+<!--            <artifactId>hibernate-validator</artifactId>-->
+<!--            <version>8.0.1.Final</version>-->
+<!--        </dependency>-->
+        <dependency>
+            <groupId>com.squareup</groupId>
+            <artifactId>javapoet</artifactId>
+            <version>1.13.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+    </dependencies>
+    <repositories>
+        <repository>
+            <id>huaweicloud</id>
+            <name>huawei maven mirror</name>
+            <url>https://mirrors.huaweicloud.com/repository/maven/</url>
+        </repository>
+
+        <repository>
+            <id>alimaven</id>
+            <name>aliyun maven</name>
+            <url>https://maven.aliyun.com/nexus/content/groups/public/</url>
+        </repository>
+
+        <repository>
+            <id>central</id>
+            <name>aliyun maven central and jcenter</name>
+            <url>https://maven.aliyun.com/repository/central</url>
+        </repository>
+
+        <repository>
+            <id>snapshot_cn-north-4_ffc8b371d4834a97a35ac516f10c7cf6_maven_2_1</id>
+            <name>jimei private</name>
+            <url>https://devrepo.devcloud.cn-north-4.huaweicloud.com/artgalaxy/cn-north-4_ffc8b371d4834a97a35ac516f10c7cf6_maven_2_1/</url>
+        </repository>
+    </repositories>
 </project>
