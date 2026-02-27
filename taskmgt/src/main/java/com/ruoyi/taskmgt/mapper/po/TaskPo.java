@@ -1,7 +1,8 @@
 package com.ruoyi.taskmgt.mapper.po;
 import com.ruoyi.common.core.domain.BaseEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 import java.util.Date;
@@ -12,6 +13,12 @@ import java.util.Date;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Table(name="robot_task")
+@Entity
+@DynamicInsert
+@DynamicUpdate
+@AllArgsConstructor
+@NoArgsConstructor
+@ToString
 public class TaskPo extends BaseEntity {
     private static final long serialVersionUID = 1L;
 

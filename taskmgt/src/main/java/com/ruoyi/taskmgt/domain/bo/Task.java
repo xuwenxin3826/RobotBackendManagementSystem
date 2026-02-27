@@ -1,15 +1,18 @@
 package com.ruoyi.taskmgt.domain.bo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.ruoyi.common.clonefactory.CopyFrom;
 import com.ruoyi.common.clonefactory.CopyNotNullTo;
 import com.ruoyi.common.core.domain.BaseEntity;
+import com.ruoyi.common.core.model.Stateful;
 import com.ruoyi.taskmgt.mapper.po.TaskPo;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.validation.constraints.NotBlank;
-import java.util.Date;
+import java.io.Serializable;
+import java.util.*;
 
 /**
  * 机器人任务对象 task
@@ -24,7 +27,7 @@ import java.util.Date;
 @NoArgsConstructor
 @CopyFrom({TaskPo.class})
 @CopyNotNullTo({TaskPo.class})
-public class Task extends BaseEntity {
+public class Task extends BaseEntity implements Serializable, Stateful {
     private static final long serialVersionUID = 1L;
 
     /** 任务ID */
@@ -49,8 +52,74 @@ public class Task extends BaseEntity {
     /** 任务类型（1定时 2电量 3闲时） */
     private String taskType;
 
-    /** 任务状态（0未开始 1准备中 2执行中 3已暂停 4已禁用 5已终止） */
-    private String status;
+    /** 任务状态（0未开始 1准备中 2执行中 3已暂停 4已禁用 5已终止 6已删除 7已结束） */
+    private Byte status;
+
+    //任务状态
+    public final static Byte NOTSTART = 0;
+    public final static Byte PENDING = 1;
+    public final static Byte EXECUTING = 2;
+    public final static Byte PAUSED = 3;
+    public final static Byte DISABLED= 4;
+    public final static Byte TERMINATED= 5;
+    public final static Byte DELETED =6;
+    public final static Byte FINISHED =7;
+
+    public static final Map<Byte, String> STATUSNAMES = new HashMap<>() {
+        {
+            put(NOTSTART, "Obj.NOTSTART");
+            put(PENDING, "Obj.PENDING");
+            put(EXECUTING, "Obj.EXECUTING");
+            put(PAUSED, "Obj.PAUSED");
+            put(DISABLED, "Obj.DISABLED");
+            put(TERMINATED, "Obj.TERMINATED");
+            put(DELETED, "Obj.DELETED");
+            put(FINISHED, "Obj.FINISHED");
+        }
+    };
+
+    /**
+     * 允许的状态迁移
+     */
+    private static final Map<Byte, Set<Byte>> toStatus = new HashMap<>() {
+        {
+            put(NOTSTART, new HashSet<>() {
+                {
+                    add(DISABLED);
+                    add(PENDING);
+                }
+            });
+            put(DISABLED, new HashSet<>() {
+                {
+                    add(NOTSTART);
+                    add(DELETED);
+                }
+            });
+            put(PENDING, new HashSet<>() {
+                {
+                    add(NOTSTART);
+                    add(EXECUTING);
+                    add(DISABLED);
+                }
+            });
+            put(EXECUTING, new HashSet<>() {
+                {
+                    add(PAUSED);
+                    add(DISABLED);
+                    add(TERMINATED);
+                    add(FINISHED);
+                }
+            });
+            put(PAUSED, new HashSet<>() {
+                {
+                    add(EXECUTING);
+                    add(PENDING);
+                    add(TERMINATED);
+                    add(DISABLED);
+                }
+            });
+        }
+    };
 
     /** 风险等级（0正常 1风险 2高风险） */
     private String riskLevel;
@@ -87,4 +156,27 @@ public class Task extends BaseEntity {
 
     /** 终止原因 */
     private String terminateReason;
+
+    /**准备队列顺序*/
+    private Long pendingOrder;
+
+    @Override
+    @JsonIgnore
+    public boolean allowTransitStatus(Byte status) {
+        boolean ret = false;
+        Set<Byte> allowStatusSet = toStatus.get(this.status);
+        if (!Objects.isNull(allowStatusSet)) {
+            ret = allowStatusSet.contains(status);
+        }
+        return ret;
+    }
+
+    /**
+     * 获得当前状态名称
+     */
+    @Override
+    @JsonIgnore
+    public String getStatusName() {
+        return STATUSNAMES.get(this.status);
+    }
 }
