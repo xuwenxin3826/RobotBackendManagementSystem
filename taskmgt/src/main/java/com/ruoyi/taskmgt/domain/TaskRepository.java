@@ -1,23 +1,33 @@
 package com.ruoyi.taskmgt.domain;
 
+import com.github.pagehelper.PageInfo;
+import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.taskmgt.domain.bo.Task;
+import com.ruoyi.taskmgt.domain.bo.TaskStep;
 import com.ruoyi.taskmgt.mapper.TaskPoMapper;
 import com.ruoyi.taskmgt.mapper.po.TaskPo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.Assert;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import javax.persistence.criteria.Predicate;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Repository
 @Slf4j
@@ -27,29 +37,35 @@ public class TaskRepository {
     private final MessageSourceAccessor messageSourceAccessor;
     private final static String TASKBYNAME = "TN_%s";
     private final static String TASKBYID = "T%d";
+    private final static String TASK_STEP_KEY = "TS%d";
+    private final StepRepository stepRepository;
 
-    public TaskRepository(TaskPoMapper taskPoMapper, RedisCache redisUtil, MessageSourceAccessor messageSourceAccessor) {
+    public TaskRepository(TaskPoMapper taskPoMapper, RedisCache redisUtil, MessageSourceAccessor messageSourceAccessor, @Lazy StepRepository stepRepository) {
         this.taskPoMapper = taskPoMapper;
         this.redisUtil = redisUtil;
         this.messageSourceAccessor = messageSourceAccessor;
+        this.stepRepository = stepRepository;
     }
 
     /**
-     * 构造满血的User对象
+     * 构造满血的Task对象
      *
-     * @param bo 充血的user对象
-     * @return 满血的User对象
+     * @param bo 充血的task对象
+     * @return 满血的Task对象
      */
     private Task build(Task bo) {
+        if (Objects.nonNull(bo)){
+            bo.setTaskRepository(this);
+        }
         return bo;
     }
 
     /**
-     * 构成满血的User对象
+     * 构成满血的Task对象
      *
-     * @param po       User Po 对象
+     * @param po       Task Po 对象
      * @param redisKey redis key
-     * @return 满血的User对象
+     * @return 满血的Task对象
      */
     private Task build(TaskPo po, Optional<String> redisKey) {
         if (Objects.nonNull(po)) {
@@ -103,7 +119,6 @@ public class TaskRepository {
         Assert.notNull(task, "TaskRepository.insert: task can not be null.");
         task.setId(null);
         TaskPo taskPo = CloneFactory.copyNotNull(new TaskPo(), task);
-
         try {
             TaskPo savedPo = this.taskPoMapper.save(taskPo);
             return CloneFactory.copy(new Task(), savedPo);
@@ -142,5 +157,68 @@ public class TaskRepository {
         String keyId = String.format(TASKBYID, task.getId());
         String keyName = String.format(TASKBYNAME, oldtaskPo.getName());
         return List.of(keyId, keyName);
+    }
+
+    /**
+     * @param id 任务id
+     * @return
+     * &#064;description  删除任务的所有步骤
+     **/
+    public Set<String> deleteTaskAllSteps(Long id) {
+        Assert.notNull(id, "TaskRepository.deleteTaskAllSteps: id is null");
+        List<TaskStep> taskSteps = this.stepRepository.retrieveStepesByTaskId(id);
+        if (StringUtils.isEmpty(taskSteps)) {
+            return Set.of();
+        }
+        Set<Long> stepIds = new HashSet<>();
+        for (TaskStep step : taskSteps) {
+            stepIds.add(step.getId());
+        }
+        Set<String> allRedisKeys = new HashSet<>();
+        for (Long stepId : stepIds) {
+            allRedisKeys.addAll(this.stepRepository.delete(stepId));
+        }
+        return allRedisKeys;
+    }
+
+    public List<Task> getTasks(Byte status, Integer isGroupTask, String name, Long robotId, Long robotGroupId, Integer taskType, Integer riskLevel, Long templateId) {
+        Sort sort = Sort.by(
+                Sort.Order.asc("status"),
+                Sort.Order.asc("pendingOrder"),
+                Sort.Order.desc("priority"),
+                Sort.Order.desc("createTime")
+        );
+        Specification<TaskPo> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (StringUtils.hasText(name)) {
+                predicates.add(cb.like(root.get("name"), name + "%"));
+            }
+            if (isGroupTask!=null) {
+                predicates.add(cb.equal(root.get("isGroupTask"), isGroupTask));
+            }
+            if (robotId!=null) {
+                predicates.add(cb.equal(root.get("robotId"), robotId));
+            }
+            if (robotGroupId!=null) {
+                predicates.add(cb.equal(root.get("robotGroupId"), robotGroupId));
+            }
+            if (taskType != null) {
+                predicates.add(cb.equal(root.get("taskType"), taskType));
+            }
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (riskLevel != null) {
+                predicates.add(cb.equal(root.get("riskLevel"), riskLevel));
+            }
+            if (templateId != null) {
+                predicates.add(cb.equal(root.get("templateId"), templateId));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        List<TaskPo> taskPos = taskPoMapper.findAll(spec,sort);
+        return taskPos.stream()
+                .map(po -> build(po, Optional.empty()))
+                .collect(Collectors.toList());
     }
 }

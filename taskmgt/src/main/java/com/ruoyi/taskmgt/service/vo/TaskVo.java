@@ -3,9 +3,11 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.ruoyi.common.clonefactory.CopyFrom;
 import com.ruoyi.taskmgt.domain.bo.Task;
+import com.ruoyi.taskmgt.domain.bo.TaskStep;
 import lombok.*;
 
 import java.util.Date;
+import java.util.List;
 
 
 @CopyFrom({Task.class})
@@ -19,6 +21,7 @@ public class TaskVo {
     /** 任务ID */
     private Long id;
 
+    @Setter
     /** 模板名称（关联查询） */
     private String templateName;
 
@@ -28,20 +31,20 @@ public class TaskVo {
     /** 优先级 */
     private Integer priority;
 
-    /** 是否组任务（Y/N） */
-    private String isGroupTask;
+    /** 是否组任务（1/0） */
+    private Integer isGroupTask;
 
     /** 任务时长（分钟） */
     private Integer duration;
 
-    /** 任务类型（中文描述） */
-    private String taskTypeText;
+    /** 任务类型 */
+    private Integer taskType;
 
-    /** 任务状态（中文描述） */
-    private String statusText;
+    /** 任务状态 */
+    private Byte status;
 
-    /** 风险等级（中文描述） */
-    private String riskLevelText;
+    /** 风险等级 */
+    private Integer riskLevel;
 
     /** Cron表达式 */
     private String cronExpression;
@@ -58,18 +61,9 @@ public class TaskVo {
     /** 指定机器人组名称 */
     private String robotGroupName;
 
-    /** 实际执行机器人名称 */
-    private String executeRobotName;
-
     /** 定时开始时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date scheduledTime;
-
-    /**任务标准作业流程 （JSON格式，前端解析表单生成的任务完整步骤） */
-    private String taskContext;
-
-    /** 任务进度（JSON格式，前端自行解析） */
-    private String progress;
 
     /** 暂停断点信息 */
     private String pauseSnapshot;
