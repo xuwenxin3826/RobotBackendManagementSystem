@@ -29,7 +29,8 @@ public class TaskController extends BaseController {
     public TableDataInfo retrieveTasks(@RequestParam(required = false) Byte status, @RequestParam(required = false) Integer isGroupTask, @RequestParam(required = false) String name,
                                        @RequestParam(required = false) Long robotId, @RequestParam(required = false)Long robotGroupId, @RequestParam(required = false)Integer taskType,
                                        @RequestParam(required = false) Integer riskLevel, @RequestParam(required = false)Long templateId,
-                                       @RequestParam(required = false,defaultValue = "1")Integer pageNum, @RequestParam(required = false,defaultValue = "10")Integer pageSize)
+                                       @RequestParam(required = false,defaultValue = "1")Integer pageNum, @RequestParam(required = false,defaultValue = "10")Integer pageSize,
+                                       @RequestParam(required = false,defaultValue = "status ASC, pending_order ASC, priority DESC, create_time DESC")String displayOrder)
     {
         startPage(pageNum,pageSize);
         List<TaskVo> result = this.taskService.retrieveTasks(status,isGroupTask,name,robotId,robotGroupId,taskType, riskLevel, templateId);
@@ -87,5 +88,35 @@ public class TaskController extends BaseController {
         return success();
     }
 
+    @Log(title = "暂停任务" ,businessType = BusinessType.UPDATE)
+    @PutMapping("tasks/{id}/pause")
+    public AjaxResult pauseTask(@PathVariable Long id)
+    {
+        this.taskService.pauseTask(id);
+        return success();
+    }
 
+    @Log(title = "继续任务" ,businessType = BusinessType.UPDATE)
+    @PutMapping("tasks/{id}/continue")
+    public AjaxResult continueTask(@PathVariable Long id)
+    {
+        this.taskService.continueTask(id);
+        return success();
+    }
+
+    @Log(title = "停止任务" ,businessType = BusinessType.UPDATE)
+    @PutMapping("tasks/{id}/terminate")
+    public AjaxResult terminateTask(@PathVariable Long id, @Validated @RequestBody TaskDto dto)
+    {
+        this.taskService.terminateTask(id,dto.getTerminateReason());
+        return success();
+    }
+
+    @Log(title = "取消任务" ,businessType = BusinessType.UPDATE)
+    @PutMapping("tasks/{id}/cancel")
+    public AjaxResult cancelTask(@PathVariable Long id)
+    {
+        this.taskService.cancelTask(id);
+        return success();
+    }
 }

@@ -4,20 +4,29 @@ import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.domain.bo.Template;
 import com.ruoyi.taskmgt.mapper.TemplatePoMapper;
 import com.ruoyi.taskmgt.mapper.po.TaskPo;
 import com.ruoyi.taskmgt.mapper.po.TemplatePo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.Assert;
 
+import javax.persistence.criteria.Predicate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
+@Slf4j
 public class TemplateRepository {
     private static final String TEMPLATEBYID = "TM%d";
     private final RedisCache redisUtil;
@@ -83,5 +92,71 @@ public class TemplateRepository {
             return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
         });
         return template.getName();
+    }
+
+    public Template insert(Template template) {
+        Assert.notNull(template, "TemplateRepository.insert: template can not be null.");
+        template.setId(null);
+        TemplatePo templatePo = CloneFactory.copyNotNull(new TemplatePo(), template);
+        try {
+            TemplatePo savedPo = this.templatePoMapper.save(templatePo);
+            return CloneFactory.copy(new Template(), savedPo);
+        } catch (DataIntegrityViolationException e) {
+            String msg = e.getMessage();
+            log.debug("templateRepository:insert: msg={}", msg);
+            if (msg != null && msg.contains("name_index")) {
+                String[] args = {this.messageSourceAccessor.getMessage("Template.name", LocaleContextHolder.getLocale()), template.getName()};
+                throw new TaskmgtException(ReturnNo.SAMEOBJECT, args, this.messageSourceAccessor.getMessage(ReturnNo.SAMEOBJECT.getMessage()));
+            }
+            throw e;
+        }
+    }
+
+    public List<String> update(Template template) {
+        Assert.notNull(template, "TemplateRepository.update: template can not be null.");
+        Assert.notNull(template.getId(), "TemplateRepository.update: template id can not be null.");
+
+        TemplatePo oldPo = this.templatePoMapper.findById(template.getId())
+                .orElseThrow(() -> {
+                    String[] args = new String[]{this.messageSourceAccessor.getMessage("Template.name", LocaleContextHolder.getLocale()), template.getId().toString()};
+                    return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,
+                            this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
+                });
+        TemplatePo newPo = CloneFactory.copyNotNull(oldPo, template);
+
+        try {
+            this.templatePoMapper.save(newPo);
+        } catch (DataIntegrityViolationException e) {
+            String msg = e.getMessage();
+            log.debug("templateRepository:update: msg={}", msg);
+            if (msg != null && msg.contains("name_index")) {
+                String[] args = {this.messageSourceAccessor.getMessage("Template.name", LocaleContextHolder.getLocale()), template.getName()};
+                throw new TaskmgtException(ReturnNo.SAMEOBJECT, args, this.messageSourceAccessor.getMessage(ReturnNo.SAMEOBJECT.getMessage()));
+            }
+            throw e;
+        }
+        String keyId = String.format(TEMPLATEBYID, template.getId());
+        return List.of(keyId);
+    }
+
+    public List<Template> getTemplates(String name, Byte status, Long robotGroupId) {
+        Specification<TemplatePo> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (StringUtils.hasText(name)) {
+                predicates.add(cb.like(root.get("name"), "%" + name + "%"));
+            }
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (robotGroupId != null) {
+                predicates.add(cb.equal(root.get("robotGroupId"), robotGroupId));
+            }
+            predicates.add(cb.notEqual(root.get("status"), Template.DELETED));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        List<TemplatePo> templatePos = templatePoMapper.findAll(spec);
+        return templatePos.stream()
+                .map(po -> build(po, Optional.empty()))
+                .collect(Collectors.toList());
     }
 }

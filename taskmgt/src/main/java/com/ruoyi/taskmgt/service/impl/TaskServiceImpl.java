@@ -3,16 +3,18 @@ package com.ruoyi.taskmgt.service.impl;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
+import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.TaskRepository;
 import com.ruoyi.taskmgt.domain.TemplateRepository;
 import com.ruoyi.taskmgt.domain.bo.Task;
-import com.ruoyi.taskmgt.domain.bo.Template;
+import com.ruoyi.taskmgt.service.StepReuseService;
 import com.ruoyi.taskmgt.service.vo.TaskVo;
 import com.ruoyi.common.utils.CloneFactory;
-import org.apache.poi.ss.formula.functions.T;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -23,11 +25,15 @@ public class TaskServiceImpl {
     private final MessageSourceAccessor messageSourceAccessor;
     private final RedisCache redisUtil;
     private final TemplateRepository templateRepository;
-    public TaskServiceImpl(TaskRepository taskRepository, MessageSourceAccessor messageSourceAccessor, RedisCache redisUtil, TemplateRepository templateRepository) {
+    private final StepReuseService stepReuseService;
+    private final StepRepository stepRepository;
+    public TaskServiceImpl(TaskRepository taskRepository, MessageSourceAccessor messageSourceAccessor, RedisCache redisUtil, TemplateRepository templateRepository, StepReuseService stepReuseService, StepRepository stepRepository) {
         this.taskRepository = taskRepository;
         this.messageSourceAccessor = messageSourceAccessor;
         this.redisUtil = redisUtil;
         this.templateRepository = templateRepository;
+        this.stepReuseService = stepReuseService;
+        this.stepRepository = stepRepository;
     }
 
     /**
@@ -84,7 +90,7 @@ public class TaskServiceImpl {
         });
 
         List<String> redisKeys = this.updateTaskStatus(task,Task.DELETED);
-        Set<String> redisStepKeys = this.taskRepository.deleteTaskAllSteps(id);
+        Set<String> redisStepKeys = this.stepRepository.deleteStepsByTaskId(id);
         redisKeys.addAll(redisStepKeys);
         this.redisUtil.deleteObject(redisKeys);
 
@@ -95,6 +101,21 @@ public class TaskServiceImpl {
      */
     public List<TaskVo> retrieveTasks(Byte status, Integer isGroupTask, String name, Long robotId, Long robotGroupId, Integer taskType, Integer riskLevel, Long templateId) {
         List<Task> tasks = this.taskRepository.getTasks(status, isGroupTask, name, robotId, robotGroupId, taskType, riskLevel, templateId);
+        if(StringUtils.isNull(isGroupTask)){
+            if (StringUtils.isNotNull(robotId)){
+                /*RobotRepository robotRepository;
+                robotGroupId=robotRepository.findById(robotId).getRobotGroupId();*/
+                tasks.addAll(this.taskRepository.getTasks(status,null,name, null, robotGroupId, taskType, riskLevel, templateId));
+            }
+            else if(StringUtils.isNotNull(robotGroupId)){
+                List<Long> robotIds = new ArrayList<>();
+                /*
+                RobotRepository robotRepository;
+                robotIds = robotRepository.getRobotIdsByRobotGroupId(robotId);
+                * */
+                tasks.addAll(this.taskRepository.getTasksByRobotIds(status,null,name, robotIds, null, taskType, riskLevel, templateId));
+            }
+        }
         return tasks.stream()
                 .map(task -> {
                     TaskVo taskVo = CloneFactory.copy(new TaskVo(), task);
@@ -135,7 +156,7 @@ public class TaskServiceImpl {
 
     /**
      * 恢复任务
-     * @param id
+     * @param id 被恢复的任务的id
      */
     public void resumeTask(Long id){
         Task task = taskRepository.findById(id).orElseThrow(()-> {
@@ -146,6 +167,83 @@ public class TaskServiceImpl {
             String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), task.getId().toString(), task.getStatus().toString()};
             throw new TaskmgtException(ReturnNo.STATENOTALLOW,args,this.messageSourceAccessor.getMessage(ReturnNo.STATENOTALLOW.getMessage()));
         }
+        List<String> redisKeys = this.updateTaskStatus(task,Task.NOTSTART);
+        this.redisUtil.deleteObject(redisKeys);
+    }
+
+    /**
+     * 暂停任务
+     * @param id 任务的id
+     */
+    public void pauseTask(Long id) {
+        Task task = taskRepository.findById(id).orElseThrow(()-> {
+            String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
+            return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
+        });
+        List<String> redisKeys = this.updateTaskStatus(task,Task.PAUSED);
+        List<String> stepRedisKeys = this.stepReuseService.pauseStepsByTaskId(id);
+        redisKeys.addAll(stepRedisKeys);
+        this.redisUtil.deleteObject(redisKeys);
+    }
+
+    /**
+     * 继续任务
+     * @param id 被暂停的任务的id
+     */
+    public void continueTask(Long id) {
+        Task task = this.taskRepository.findById(id).orElseThrow(()-> {
+            String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
+            return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
+        });
+        List<String> redisKeys;
+        List<Task>tasks = new ArrayList<>();
+        if(task.getIsGroupTask().equals(0)){
+            tasks.addAll(this.taskRepository.findByRobotIdAndStatus(task.getRobotId(),Task.EXECUTING));
+        }
+        else{
+            //组任务需确认该组所有的机器人都没有正在执行的任务
+            /*
+            RobotRepository robotRepository;
+            List<Robot> robots = robotRepository.findByRobotGroupId(task.getRobotGroupId());
+            for(Robot robot : robots){
+                tasks.addAll(this.taskRepository.findByRobotIdAndStatus(robot.getId(),Task.EXECUTING));
+            }
+            * */
+        }
+        if (StringUtils.isEmpty(tasks)){
+            redisKeys = this.updateTaskStatus(task,Task.EXECUTING);
+            List<String> stepRedisKeys = this.stepReuseService.continueStepsByTaskId(id);
+            redisKeys.addAll(stepRedisKeys);
+        }
+        else redisKeys = this.updateTaskStatus(task,Task.PENDING);
+        this.redisUtil.deleteObject(redisKeys);
+    }
+
+    /**
+     * 停止任务
+     * @param id 任务的id
+     */
+    public void terminateTask(Long id,String terminateReason) {
+        Task task = taskRepository.findById(id).orElseThrow(()-> {
+            String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
+            return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
+        });
+        task.setTerminateReason(terminateReason);
+        List<String> redisKeys = this.updateTaskStatus(task,Task.TERMINATED);
+        List<String> stepRedisKeys = this.stepReuseService.terminatedStepsByTaskId(id);
+        redisKeys.addAll(stepRedisKeys);
+        this.redisUtil.deleteObject(redisKeys);
+    }
+
+    /**
+     * 取消准备中的任务
+     * @param id 准备中任务的id
+     */
+    public void cancelTask(Long id) {
+        Task task = taskRepository.findById(id).orElseThrow(()-> {
+            String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
+            return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
+        });
         List<String> redisKeys = this.updateTaskStatus(task,Task.NOTSTART);
         this.redisUtil.deleteObject(redisKeys);
     }

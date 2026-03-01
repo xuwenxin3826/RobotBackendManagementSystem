@@ -39,12 +39,6 @@ public class TaskDto {
     /** 任务类型（1定时 2电量 3闲时） */
     private Integer taskType;
 
-    /** 任务状态（0未开始 1准备中 2执行中 3已暂停 4已禁用 5已终止） */
-    private Byte status;
-
-    /** 风险等级（0正常 1风险 2高风险） */
-    private Integer riskLevel;
-
     /** Cron表达式（定时任务时填写） */
     private String cronExpression;
 
@@ -63,5 +57,9 @@ public class TaskDto {
     /** 任务开始时间（定时任务时使用） */
     private Date scheduledTime;
 
+    /** 任务准备顺序  */
     private Integer pendingOrder;
+
+    /** 终止任务原因  */
+    private String terminateReason;
 }

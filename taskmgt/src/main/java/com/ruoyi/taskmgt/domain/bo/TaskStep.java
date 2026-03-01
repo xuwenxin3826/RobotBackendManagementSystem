@@ -66,6 +66,7 @@ public class TaskStep extends BaseEntity implements Serializable, Stateful {
             put(NOTSTART, new HashSet<>() {
                 {
                     add(EXECUTING);
+                    add(TERMINATED);
                 }
             });
 

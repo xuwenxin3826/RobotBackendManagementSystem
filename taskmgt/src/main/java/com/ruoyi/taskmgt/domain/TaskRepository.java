@@ -1,7 +1,5 @@
 package com.ruoyi.taskmgt.domain;
 
-import com.github.pagehelper.PageInfo;
-import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
@@ -9,17 +7,14 @@ import com.ruoyi.common.utils.CloneFactory;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.domain.bo.TaskStep;
+import com.ruoyi.taskmgt.domain.bo.Template;
 import com.ruoyi.taskmgt.mapper.TaskPoMapper;
 import com.ruoyi.taskmgt.mapper.po.TaskPo;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Repository;
@@ -159,29 +154,50 @@ public class TaskRepository {
         return List.of(keyId, keyName);
     }
 
-    /**
-     * @param id 任务id
-     * @return
-     * &#064;description  删除任务的所有步骤
-     **/
-    public Set<String> deleteTaskAllSteps(Long id) {
-        Assert.notNull(id, "TaskRepository.deleteTaskAllSteps: id is null");
-        List<TaskStep> taskSteps = this.stepRepository.retrieveStepesByTaskId(id);
-        if (StringUtils.isEmpty(taskSteps)) {
-            return Set.of();
-        }
-        Set<Long> stepIds = new HashSet<>();
-        for (TaskStep step : taskSteps) {
-            stepIds.add(step.getId());
-        }
-        Set<String> allRedisKeys = new HashSet<>();
-        for (Long stepId : stepIds) {
-            allRedisKeys.addAll(this.stepRepository.delete(stepId));
-        }
-        return allRedisKeys;
+    public List<Task> getTasks(Byte status, Integer isGroupTask, String name, Long robotId, Long robotGroupId, Integer taskType, Integer riskLevel, Long templateId) {
+        Specification<TaskPo> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (StringUtils.hasText(name)) {
+                predicates.add(cb.like(root.get("name"), name + "%"));
+            }
+            if (isGroupTask!=null) {
+                predicates.add(cb.equal(root.get("isGroupTask"), isGroupTask));
+            }
+            if (robotId!=null) {
+                predicates.add(cb.equal(root.get("robotId"), robotId));
+            }
+            if (robotGroupId!=null) {
+                predicates.add(cb.equal(root.get("robotGroupId"), robotGroupId));
+            }
+            if (taskType != null) {
+                predicates.add(cb.equal(root.get("taskType"), taskType));
+            }
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            if (riskLevel != null) {
+                predicates.add(cb.equal(root.get("riskLevel"), riskLevel));
+            }
+            if (templateId != null) {
+                predicates.add(cb.equal(root.get("templateId"), templateId));
+            }
+            predicates.add(cb.notEqual(root.get("status"), Task.DELETED));
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        List<TaskPo> taskPos = taskPoMapper.findAll(spec);
+        return taskPos.stream()
+                .map(po -> build(po, Optional.empty()))
+                .collect(Collectors.toList());
     }
 
-    public List<Task> getTasks(Byte status, Integer isGroupTask, String name, Long robotId, Long robotGroupId, Integer taskType, Integer riskLevel, Long templateId) {
+    public List<Task> findByRobotIdAndStatus(Long robotId, Byte status) {
+        List<TaskPo> taskPos = this.taskPoMapper.findByRobotIdAndStatus(robotId,status);
+        return taskPos.stream()
+                .map(po -> build(po, Optional.empty()))
+                .collect(Collectors.toList());
+    }
+
+    public List<Task> getTasksByRobotIds(Byte status, Integer isGroupTask, String name, List<Long> robotIds, Long robotGroupId, Integer taskType, Integer riskLevel, Long templateId) {
         Sort sort = Sort.by(
                 Sort.Order.asc("status"),
                 Sort.Order.asc("pendingOrder"),
@@ -196,8 +212,8 @@ public class TaskRepository {
             if (isGroupTask!=null) {
                 predicates.add(cb.equal(root.get("isGroupTask"), isGroupTask));
             }
-            if (robotId!=null) {
-                predicates.add(cb.equal(root.get("robotId"), robotId));
+            if (robotIds!=null) {
+                predicates.add(cb.equal(root.get("robotId"), robotIds));
             }
             if (robotGroupId!=null) {
                 predicates.add(cb.equal(root.get("robotGroupId"), robotGroupId));
