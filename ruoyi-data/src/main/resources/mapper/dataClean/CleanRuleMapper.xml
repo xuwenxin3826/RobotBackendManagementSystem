@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.data.mapper.CleanRuleMapper">
+
+    <!-- 查询任务 -->
+    <select id="selectById" resultType="com.ruoyi.data.mapper.po.CleanRulePo">
+        SELECT id,
+               execute_mode,
+               run_time,
+               apply_data_source,
+               config_json,
+               status
+        FROM clean_rule_config
+        WHERE id = #{id}
+    </select>
+
+    <!-- 查询表字段（排除主键） -->
+    <select id="getTableColumns" resultType="String">
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = #{tableName}
+          AND column_name != 'id'
+    </select>
+
+</mapper>
