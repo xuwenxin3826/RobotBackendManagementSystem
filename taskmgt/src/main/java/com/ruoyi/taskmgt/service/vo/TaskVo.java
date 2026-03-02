@@ -3,20 +3,20 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.ruoyi.common.clonefactory.CopyFrom;
 import com.ruoyi.taskmgt.domain.bo.Task;
-import com.ruoyi.taskmgt.domain.bo.TaskStep;
+import io.swagger.annotations.ApiModel;
 import lombok.*;
 
 import java.util.Date;
-import java.util.List;
-
 
 @CopyFrom({Task.class})
 @Getter
+@Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @ToString(doNotUseGetters = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ApiModel("任务VO")
 public class TaskVo {
     /** 任务ID */
     private Long id;

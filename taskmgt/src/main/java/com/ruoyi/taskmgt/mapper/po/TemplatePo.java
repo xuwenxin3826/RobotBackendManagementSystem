@@ -5,13 +5,13 @@ import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 
 @EqualsAndHashCode(callSuper = true)
-@Table(name="robot_template")
+@Table(name = "robot_template", uniqueConstraints = {
+        @UniqueConstraint(name = "template_name_index", columnNames = "name")
+})
 @Entity
 @DynamicInsert
 @DynamicUpdate
@@ -20,6 +20,7 @@ import javax.validation.constraints.NotBlank;
 @ToString
 public class TemplatePo extends BaseEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /** 模板名称 */
@@ -29,13 +30,15 @@ public class TemplatePo extends BaseEntity {
     /** 模板描述 */
     private String description;
 
-    /** 关联的机器人组ID（可为空，表示不限制组） */
+    /** 关联的机器人组ID*/
     private Long robotGroupId;
 
     /** 表单内容（JSON格式，定义任务参数） */
+    @Column(columnDefinition = "text")
     private String formContent;
 
     /** 标准作业流程（JSON数组，定义步骤名称、顺序等） */
+    @Column(columnDefinition = "text")
     private String workflow;
 
     /** 状态（0正常 1停用） */

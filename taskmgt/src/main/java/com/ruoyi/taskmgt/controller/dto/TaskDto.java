@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.ruoyi.common.clonefactory.CopyTo;
 import com.ruoyi.common.validation.NewGroup;
 import com.ruoyi.taskmgt.domain.bo.Task;
+import io.swagger.annotations.ApiModel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +17,7 @@ import java.util.Date;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @CopyTo({Task.class})
+@ApiModel("任务DTO")
 public class TaskDto {
     /** 任务ID */
     private Long id;

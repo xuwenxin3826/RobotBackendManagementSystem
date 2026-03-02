@@ -3,6 +3,7 @@ package com.ruoyi.taskmgt.service.impl;
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
+import com.ruoyi.common.utils.CloneFactory;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.TaskRepository;
@@ -10,16 +11,23 @@ import com.ruoyi.taskmgt.domain.TemplateRepository;
 import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.service.StepReuseService;
 import com.ruoyi.taskmgt.service.vo.TaskVo;
-import com.ruoyi.common.utils.CloneFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Service
+@Transactional
+@Slf4j
+@RequiredArgsConstructor
 public class TaskServiceImpl {
     private final TaskRepository taskRepository;
     private final MessageSourceAccessor messageSourceAccessor;
@@ -27,14 +35,6 @@ public class TaskServiceImpl {
     private final TemplateRepository templateRepository;
     private final StepReuseService stepReuseService;
     private final StepRepository stepRepository;
-    public TaskServiceImpl(TaskRepository taskRepository, MessageSourceAccessor messageSourceAccessor, RedisCache redisUtil, TemplateRepository templateRepository, StepReuseService stepReuseService, StepRepository stepRepository) {
-        this.taskRepository = taskRepository;
-        this.messageSourceAccessor = messageSourceAccessor;
-        this.redisUtil = redisUtil;
-        this.templateRepository = templateRepository;
-        this.stepReuseService = stepReuseService;
-        this.stepRepository = stepRepository;
-    }
 
     /**
      * @param task 即将新增的任务
@@ -121,6 +121,7 @@ public class TaskServiceImpl {
                     TaskVo taskVo = CloneFactory.copy(new TaskVo(), task);
                     String templateName = this.templateRepository.getTemplateNameById(task.getTemplateId());
                     taskVo.setTemplateName(templateName);
+                    log.info("TaskVo: {}", taskVo);
                     return taskVo;
                 })
                 .collect(Collectors.toList());

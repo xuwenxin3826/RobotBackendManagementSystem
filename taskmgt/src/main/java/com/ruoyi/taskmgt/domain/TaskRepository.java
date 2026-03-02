@@ -6,8 +6,6 @@ import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.taskmgt.domain.bo.Task;
-import com.ruoyi.taskmgt.domain.bo.TaskStep;
-import com.ruoyi.taskmgt.domain.bo.Template;
 import com.ruoyi.taskmgt.mapper.TaskPoMapper;
 import com.ruoyi.taskmgt.mapper.po.TaskPo;
 import lombok.extern.slf4j.Slf4j;
@@ -120,7 +118,7 @@ public class TaskRepository {
         } catch (DataIntegrityViolationException e) {
             String msg = e.getMessage();
             log.debug("taskRepository:update: msg={}", msg);
-            if (msg != null && msg.contains("name_index")) {
+            if (msg != null && msg.contains("task_name_index")) {
                 String[] args = {this.messageSourceAccessor.getMessage("Task.name", LocaleContextHolder.getLocale()), task.getName()};
                 throw new TaskmgtException(ReturnNo.SAMEOBJECT, args, this.messageSourceAccessor.getMessage(ReturnNo.SAMEOBJECT.getMessage()));
             }
@@ -143,7 +141,7 @@ public class TaskRepository {
         } catch (DataIntegrityViolationException e) {
             String msg = e.getMessage();
             log.debug("taskRepository:update: msg={}", msg);
-            if (msg != null && msg.contains("name_index")) {
+            if (msg != null && msg.contains("task_name_index")) {
                 String[] args = {this.messageSourceAccessor.getMessage("Task.name", LocaleContextHolder.getLocale()), task.getName()};
                 throw new TaskmgtException(ReturnNo.SAMEOBJECT, args, this.messageSourceAccessor.getMessage(ReturnNo.SAMEOBJECT.getMessage()));
             }

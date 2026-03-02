@@ -114,7 +114,18 @@ public class SecurityConfig
                 requests.antMatchers("/login", "/register", "/captchaImage").permitAll()
                     // 静态资源，可匿名访问
                     .antMatchers(HttpMethod.GET, "/", "/*.html", "/**/*.html", "/**/*.css", "/**/*.js", "/profile/**").permitAll()
-                    .antMatchers("/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/*/api-docs", "/druid/**").permitAll()
+                    .antMatchers("/swagger-ui.html",
+                            "/swagger-resources/**",
+                            "/webjars/**",
+                            "/*/api-docs",
+                            "/druid/**",
+                            "/dev-api/swagger-ui/**",          // OpenAPI 3 UI 资源
+                            "/dev-api/swagger-ui.html",         // 兼容 Swagger 2
+                            "/dev-api/webjars/**",              // WebJars 资源
+                            "/dev-api/v3/api-docs/**",          // OpenAPI 3 规范文档
+                            "/dev-api/doc.html"                  // Knife4j 增强文档（如果有）
+                    ).permitAll()
+                        .antMatchers("/taskmgt/**").permitAll()//临时放行taskmgt的接口用于测试
                     // 除上面外的所有请求全部需要鉴权认证
                     .anyRequest().authenticated();
             })

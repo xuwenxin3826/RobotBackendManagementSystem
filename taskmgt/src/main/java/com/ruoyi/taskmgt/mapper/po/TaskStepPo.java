@@ -5,9 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.util.Date;
 
 @Data
@@ -21,6 +19,7 @@ import java.util.Date;
 @ToString
 public class TaskStepPo extends BaseEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
     /** 所属任务ID */
     private Long taskId;
@@ -35,6 +34,7 @@ public class TaskStepPo extends BaseEntity {
     private Byte status;
 
     /** 执行日志 */
+    @Column(columnDefinition = "text")
     private String log;
 
     /** 开始时间 */

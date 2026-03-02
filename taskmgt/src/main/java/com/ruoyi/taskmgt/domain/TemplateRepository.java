@@ -5,10 +5,8 @@ import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.domain.bo.Template;
 import com.ruoyi.taskmgt.mapper.TemplatePoMapper;
-import com.ruoyi.taskmgt.mapper.po.TaskPo;
 import com.ruoyi.taskmgt.mapper.po.TemplatePo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -104,7 +102,7 @@ public class TemplateRepository {
         } catch (DataIntegrityViolationException e) {
             String msg = e.getMessage();
             log.debug("templateRepository:insert: msg={}", msg);
-            if (msg != null && msg.contains("name_index")) {
+            if (msg != null && msg.contains("template_name_index")) {
                 String[] args = {this.messageSourceAccessor.getMessage("Template.name", LocaleContextHolder.getLocale()), template.getName()};
                 throw new TaskmgtException(ReturnNo.SAMEOBJECT, args, this.messageSourceAccessor.getMessage(ReturnNo.SAMEOBJECT.getMessage()));
             }
@@ -129,7 +127,7 @@ public class TemplateRepository {
         } catch (DataIntegrityViolationException e) {
             String msg = e.getMessage();
             log.debug("templateRepository:update: msg={}", msg);
-            if (msg != null && msg.contains("name_index")) {
+            if (msg != null && msg.contains("template_name_index")) {
                 String[] args = {this.messageSourceAccessor.getMessage("Template.name", LocaleContextHolder.getLocale()), template.getName()};
                 throw new TaskmgtException(ReturnNo.SAMEOBJECT, args, this.messageSourceAccessor.getMessage(ReturnNo.SAMEOBJECT.getMessage()));
             }

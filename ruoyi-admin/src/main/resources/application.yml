@@ -87,7 +87,15 @@ spring:
         max-active: 8
         # #连接池最大阻塞等待时间（使用负值表示没有限制）
         max-wait: -1ms
-
+  jpa:
+    hibernate:
+      ddl-auto: validate   # 生产环境用 validate 或 none，开发时可先设为 update 自动建表
+    show-sql: true         # 显示 SQL 日志（便于调试）
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
 # token配置
 token:
   # 令牌自定义标识
@@ -117,7 +125,7 @@ swagger:
   # 是否开启swagger
   enabled: true
   # 请求前缀
-  pathMapping: /dev-api
+  pathMapping: ""
 
 # 防盗链配置
 referer:

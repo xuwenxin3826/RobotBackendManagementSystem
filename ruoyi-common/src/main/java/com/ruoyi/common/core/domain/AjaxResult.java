@@ -4,12 +4,14 @@ import java.util.HashMap;
 import java.util.Objects;
 import com.ruoyi.common.constant.HttpStatus;
 import com.ruoyi.common.utils.StringUtils;
+import io.swagger.annotations.ApiModel;
 
 /**
  * 操作消息提醒
  * 
  * @author ruoyi
  */
+@ApiModel("统一返回结果")
 public class AjaxResult extends HashMap<String, Object>
 {
     private static final long serialVersionUID = 1L;

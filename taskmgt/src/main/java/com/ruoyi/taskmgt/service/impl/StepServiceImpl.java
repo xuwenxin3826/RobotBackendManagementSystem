@@ -8,23 +8,25 @@ import com.ruoyi.taskmgt.domain.TaskRepository;
 import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.domain.bo.TaskStep;
 import com.ruoyi.taskmgt.service.vo.TaskStepVo;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Service
+@Transactional
+@Slf4j
+@RequiredArgsConstructor
 public class StepServiceImpl {
     private final TaskRepository taskRepository;
     private final MessageSourceAccessor messageSourceAccessor;
     private final StepRepository stepRepository;
-
-    public StepServiceImpl(TaskRepository taskRepository, MessageSourceAccessor messageSourceAccessor, StepRepository stepRepository) {
-        this.taskRepository = taskRepository;
-        this.messageSourceAccessor = messageSourceAccessor;
-        this.stepRepository = stepRepository;
-    }
 
     public List<TaskStepVo> createSteps(Long taskId,List<TaskStep> steps) {
         Assert.notEmpty(steps, "steps cannot be empty");

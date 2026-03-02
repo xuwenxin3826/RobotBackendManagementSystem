@@ -12,7 +12,9 @@ import java.util.Date;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Table(name="robot_task")
+@Table(name = "robot_task", uniqueConstraints = {
+        @UniqueConstraint(name = "task_name_index", columnNames = "name")
+})
 @Entity
 @DynamicInsert
 @DynamicUpdate
@@ -24,6 +26,7 @@ public class TaskPo extends BaseEntity {
 
     /** 任务ID */
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     /** 模板ID */

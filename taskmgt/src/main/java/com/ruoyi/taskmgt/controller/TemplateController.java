@@ -11,6 +11,7 @@ import com.ruoyi.taskmgt.controller.dto.TemplateDto;
 import com.ruoyi.taskmgt.domain.bo.Template;
 import com.ruoyi.taskmgt.service.impl.TemplateServiceImpl;
 import com.ruoyi.taskmgt.service.vo.TemplateVo;
+import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -21,9 +22,11 @@ import java.util.List;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
+@RequestMapping("/taskmgt")
 public class TemplateController extends BaseController {
     private final TemplateServiceImpl templateService;
 
+    @ApiOperation("获取模板列表")
     @Log(title = "查询模板列表", businessType = BusinessType.OTHER)
     @GetMapping("templates")
     public TableDataInfo retrieveTemplates(
@@ -37,6 +40,7 @@ public class TemplateController extends BaseController {
         return getDataTable(list);
     }
 
+    @ApiOperation("获取模板详情")
     @Log(title = "获取模板详情", businessType = BusinessType.OTHER)
     @GetMapping("templates/{id}")
     public AjaxResult getTemplate(@PathVariable Long id) {
@@ -44,6 +48,7 @@ public class TemplateController extends BaseController {
         return success(vo);
     }
 
+    @ApiOperation("创建模板")
     @Log(title = "创建模板", businessType = BusinessType.INSERT)
     @PostMapping("template")
     public AjaxResult createTemplate(@Validated(NewGroup.class) @RequestBody TemplateDto dto) {
@@ -52,6 +57,7 @@ public class TemplateController extends BaseController {
         return success(result);
     }
 
+    @ApiOperation("修改模板")
     @Log(title = "修改模板", businessType = BusinessType.UPDATE)
     @PutMapping("templates/{id}")
     public AjaxResult updateTemplate(@PathVariable Long id, @Validated @RequestBody TemplateDto dto) {
@@ -61,6 +67,7 @@ public class TemplateController extends BaseController {
         return success();
     }
 
+    @ApiOperation("删除模板")
     @Log(title = "删除模板", businessType = BusinessType.DELETE)
     @DeleteMapping("templates/{id}")
     public AjaxResult deleteTemplate(@PathVariable Long id) {
@@ -68,6 +75,7 @@ public class TemplateController extends BaseController {
         return success();
     }
 
+    @ApiOperation("禁用模板")
     @Log(title = "禁用模板", businessType = BusinessType.UPDATE)
     @PutMapping("templates/{id}/ban")
     public AjaxResult banTemplate(@PathVariable Long id) {
@@ -75,6 +83,7 @@ public class TemplateController extends BaseController {
         return success();
     }
 
+    @ApiOperation("恢复模板")
     @Log(title = "恢复模板", businessType = BusinessType.UPDATE)
     @PutMapping("templates/{id}/resume")
     public AjaxResult resumeTemplate(@PathVariable Long id) {

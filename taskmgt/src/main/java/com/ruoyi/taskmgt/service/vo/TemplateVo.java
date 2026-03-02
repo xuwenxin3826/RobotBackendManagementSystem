@@ -3,17 +3,20 @@ package com.ruoyi.taskmgt.service.vo;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.ruoyi.common.clonefactory.CopyFrom;
 import com.ruoyi.taskmgt.domain.bo.Template;
+import io.swagger.annotations.ApiModel;
 import lombok.*;
 
 import java.util.Date;
 
 @CopyFrom({Template.class})
 @Getter
+@Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @ToString(doNotUseGetters = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ApiModel("任务模板VO")
 public class TemplateVo {
     private Long id;
     private String name;

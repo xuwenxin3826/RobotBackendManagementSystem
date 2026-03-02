@@ -7,25 +7,25 @@ import com.ruoyi.common.utils.CloneFactory;
 import com.ruoyi.taskmgt.domain.TemplateRepository;
 import com.ruoyi.taskmgt.domain.bo.Template;
 import com.ruoyi.taskmgt.service.vo.TemplateVo;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
+import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+@Service
+@Transactional
+@Slf4j
+@RequiredArgsConstructor
 public class TemplateServiceImpl {
     private final TemplateRepository templateRepository;
     private final MessageSourceAccessor messageSourceAccessor;
     private final RedisCache redisUtil;
-
-    public TemplateServiceImpl(TemplateRepository templateRepository,
-                               MessageSourceAccessor messageSourceAccessor,
-                               RedisCache redisUtil) {
-        this.templateRepository = templateRepository;
-        this.messageSourceAccessor = messageSourceAccessor;
-        this.redisUtil = redisUtil;
-    }
 
     public TemplateVo createTemplate(Template template) {
         template.setStatus(Template.ENABLED);

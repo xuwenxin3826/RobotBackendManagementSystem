@@ -3,6 +3,7 @@ package com.ruoyi.taskmgt.service.vo;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.ruoyi.common.clonefactory.CopyFrom;
 import com.ruoyi.taskmgt.domain.bo.TaskStep;
+import io.swagger.annotations.ApiModel;
 import lombok.*;
 
 @CopyFrom({TaskStep.class})
@@ -13,6 +14,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ApiModel("任务步骤VO")
 public class TaskStepVo {
     private Long id;
 

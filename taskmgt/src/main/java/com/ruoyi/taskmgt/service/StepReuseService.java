@@ -2,16 +2,21 @@ package com.ruoyi.taskmgt.service;
 
 import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.bo.TaskStep;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@Service
+@Transactional
+@Slf4j
+@RequiredArgsConstructor
 public class StepReuseService {
     private final StepRepository stepRepository ;
-    public StepReuseService(StepRepository stepRepository) {
-        this.stepRepository = stepRepository;
-    }
 
     public List<String> pauseStepsByTaskId(Long taskId) {
         List<TaskStep> steps = this.stepRepository.findStepesByTaskId(taskId);

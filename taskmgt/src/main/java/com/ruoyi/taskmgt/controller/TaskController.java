@@ -11,6 +11,7 @@ import com.ruoyi.taskmgt.controller.dto.TaskDto;
 import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.service.impl.TaskServiceImpl;
 import com.ruoyi.taskmgt.service.vo.TaskVo;
+import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -21,9 +22,11 @@ import java.util.List;
 @RestController
 @Slf4j
 @RequiredArgsConstructor
+@RequestMapping("/taskmgt")
 public class TaskController extends BaseController {
     private final TaskServiceImpl taskService;
 
+    @ApiOperation("获取任务列表")
     @Log(title = "查看任务列表")
     @GetMapping("tasks")
     public TableDataInfo retrieveTasks(@RequestParam(required = false) Byte status, @RequestParam(required = false) Integer isGroupTask, @RequestParam(required = false) String name,
@@ -38,6 +41,7 @@ public class TaskController extends BaseController {
     }
 
     /*还需添加返回Vo对象中的机器人名称（需要调用机器人管理模块）*/
+    @ApiOperation("创建任务")
     @Log(title = "创建任务", businessType = BusinessType.INSERT)
     @PostMapping("task")
     public AjaxResult createTask(@Validated(value = NewGroup.class) @RequestBody TaskDto dto)
@@ -46,6 +50,7 @@ public class TaskController extends BaseController {
         TaskVo result = this.taskService.createTask(task);
         return success(result);
     }
+    @ApiOperation("修改任务")
     @Log(title = "修改任务", businessType = BusinessType.UPDATE)
     @PutMapping("tasks/{id}")
     public AjaxResult updateTask(@PathVariable Long id,@Validated @RequestBody TaskDto dto)
@@ -55,7 +60,7 @@ public class TaskController extends BaseController {
         this.taskService.updateTask(task);
         return success();
     }
-
+    @ApiOperation("删除任务")
     @Log(title = "删除任务", businessType = BusinessType.DELETE)
     @DeleteMapping("tasks/{id}")
     public AjaxResult deleteTask(@PathVariable Long id)
@@ -63,7 +68,7 @@ public class TaskController extends BaseController {
         this.taskService.deleteTask(id);
         return success();
     }
-
+    @ApiOperation("查看任务详情")
     @Log(title = "查看任务详情")
     @GetMapping("tasks/{id}")
     public AjaxResult getTask(@PathVariable Long id)
@@ -71,7 +76,7 @@ public class TaskController extends BaseController {
         TaskVo result = this.taskService.getTask(id);
         return success(result);
     }
-
+    @ApiOperation("禁用任务")
     @Log(title = "禁用任务" ,businessType = BusinessType.UPDATE)
     @PutMapping("tasks/{id}/ban")
     public AjaxResult banTask(@PathVariable Long id)
@@ -79,7 +84,7 @@ public class TaskController extends BaseController {
         this.taskService.banTask(id);
         return success();
     }
-
+    @ApiOperation("恢复任务")
     @Log(title = "恢复任务" ,businessType = BusinessType.UPDATE)
     @PutMapping("tasks/{id}/resume")
     public AjaxResult resumeTask(@PathVariable Long id)
@@ -87,7 +92,7 @@ public class TaskController extends BaseController {
         this.taskService.resumeTask(id);
         return success();
     }
-
+    @ApiOperation("暂停任务")
     @Log(title = "暂停任务" ,businessType = BusinessType.UPDATE)
     @PutMapping("tasks/{id}/pause")
     public AjaxResult pauseTask(@PathVariable Long id)
@@ -95,7 +100,7 @@ public class TaskController extends BaseController {
         this.taskService.pauseTask(id);
         return success();
     }
-
+    @ApiOperation("继续任务")
     @Log(title = "继续任务" ,businessType = BusinessType.UPDATE)
     @PutMapping("tasks/{id}/continue")
     public AjaxResult continueTask(@PathVariable Long id)
@@ -103,7 +108,7 @@ public class TaskController extends BaseController {
         this.taskService.continueTask(id);
         return success();
     }
-
+    @ApiOperation("停止任务")
     @Log(title = "停止任务" ,businessType = BusinessType.UPDATE)
     @PutMapping("tasks/{id}/terminate")
     public AjaxResult terminateTask(@PathVariable Long id, @Validated @RequestBody TaskDto dto)
@@ -111,7 +116,7 @@ public class TaskController extends BaseController {
         this.taskService.terminateTask(id,dto.getTerminateReason());
         return success();
     }
-
+    @ApiOperation("取消任务")
     @Log(title = "取消任务" ,businessType = BusinessType.UPDATE)
     @PutMapping("tasks/{id}/cancel")
     public AjaxResult cancelTask(@PathVariable Long id)
