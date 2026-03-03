@@ -9,11 +9,12 @@ import com.ruoyi.common.utils.CloneFactory;
 import com.ruoyi.common.validation.NewGroup;
 import com.ruoyi.taskmgt.controller.dto.TaskDto;
 import com.ruoyi.taskmgt.domain.bo.Task;
-import com.ruoyi.taskmgt.service.impl.TaskServiceImpl;
+import com.ruoyi.taskmgt.service.ITaskService;
 import com.ruoyi.taskmgt.service.vo.TaskVo;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +25,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/taskmgt")
 public class TaskController extends BaseController {
-    private final TaskServiceImpl taskService;
+    @Autowired
+    private final ITaskService taskService;
 
     @ApiOperation("获取任务列表")
     @Log(title = "查看任务列表")
@@ -35,7 +37,7 @@ public class TaskController extends BaseController {
                                        @RequestParam(required = false,defaultValue = "1")Integer pageNum, @RequestParam(required = false,defaultValue = "10")Integer pageSize,
                                        @RequestParam(required = false,defaultValue = "status ASC, pending_order ASC, priority DESC, create_time DESC")String displayOrder)
     {
-        startPage(pageNum,pageSize);
+        startPage(pageNum,pageSize,displayOrder);
         List<TaskVo> result = this.taskService.retrieveTasks(status,isGroupTask,name,robotId,robotGroupId,taskType, riskLevel, templateId);
         return getDataTable(result);
     }
@@ -43,7 +45,7 @@ public class TaskController extends BaseController {
     /*还需添加返回Vo对象中的机器人名称（需要调用机器人管理模块）*/
     @ApiOperation("创建任务")
     @Log(title = "创建任务", businessType = BusinessType.INSERT)
-    @PostMapping("task")
+    @PostMapping("taskcore")
     public AjaxResult createTask(@Validated(value = NewGroup.class) @RequestBody TaskDto dto)
     {
         Task task = CloneFactory.copy(new Task(),dto);

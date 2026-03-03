@@ -1,6 +1,5 @@
 package com.ruoyi.taskmgt.mapper;
 
-import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.mapper.po.TaskPo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

@@ -9,11 +9,12 @@ import com.ruoyi.common.utils.CloneFactory;
 import com.ruoyi.common.validation.NewGroup;
 import com.ruoyi.taskmgt.controller.dto.TemplateDto;
 import com.ruoyi.taskmgt.domain.bo.Template;
-import com.ruoyi.taskmgt.service.impl.TemplateServiceImpl;
+import com.ruoyi.taskmgt.service.ITemplateService;
 import com.ruoyi.taskmgt.service.vo.TemplateVo;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +25,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/taskmgt")
 public class TemplateController extends BaseController {
-    private final TemplateServiceImpl templateService;
+    @Autowired
+    private final ITemplateService templateService;
 
     @ApiOperation("获取模板列表")
     @Log(title = "查询模板列表", businessType = BusinessType.OTHER)

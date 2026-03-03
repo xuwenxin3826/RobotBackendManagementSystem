@@ -41,6 +41,9 @@ public class TaskPo extends BaseEntity {
     /** 是否组任务（1是 0否） */
     private Integer isGroupTask;
 
+    /** 具体描述 */
+    private String description;
+
     /** 任务时长（分钟） */
     private Integer duration;
 

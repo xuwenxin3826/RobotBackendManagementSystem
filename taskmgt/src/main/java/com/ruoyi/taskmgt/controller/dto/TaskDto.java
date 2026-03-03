@@ -25,6 +25,9 @@ public class TaskDto {
     /** 模板ID */
     private Long templateId;
 
+    /** 具体描述 */
+    private String description;
+
     /** 任务名称 */
     @NotBlank(message = "Dto.NotNull",groups = NewGroup.class)
     private String name;

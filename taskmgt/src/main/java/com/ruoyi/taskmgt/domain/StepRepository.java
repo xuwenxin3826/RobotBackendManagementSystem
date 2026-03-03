@@ -4,10 +4,13 @@ import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.taskmgt.common.constants.TaskLogEventType;
 import com.ruoyi.taskmgt.domain.bo.TaskStep;
 import com.ruoyi.taskmgt.mapper.StepPoMapper;
 import com.ruoyi.taskmgt.mapper.po.TaskStepPo;
+import com.ruoyi.taskmgt.service.impl.TaskLogReuseService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
@@ -27,12 +30,14 @@ public class StepRepository {
     private final MessageSourceAccessor messageSourceAccessor;
     private final static String STEPBYNAME = "SN_%s";
     private final static String STEPBYID = "S%d";
+    private final TaskLogReuseService taskLogService;
 
-    public StepRepository(StepPoMapper stepPoMapper, TaskRepository taskRepository, RedisCache redisUtil, MessageSourceAccessor messageSourceAccessor) {
+    public StepRepository(StepPoMapper stepPoMapper, TaskRepository taskRepository, RedisCache redisUtil, MessageSourceAccessor messageSourceAccessor, TaskLogReuseService taskLogService) {
         this.stepPoMapper = stepPoMapper;
         this.taskRepository = taskRepository;
         this.redisUtil = redisUtil;
         this.messageSourceAccessor = messageSourceAccessor;
+        this.taskLogService = taskLogService;
     }
 
     /**
@@ -63,6 +68,24 @@ public class StepRepository {
             return this.build(bo);
         }
         return null;
+    }
+
+    /**
+     * 以id找对象
+     *
+     * @param id 对象id
+     * @return taskStep对象
+     */
+    public Optional<TaskStep> findById(Long id) {
+        Assert.notNull(id, "TaskRepository.findById: TaskRepository.findById: id is null");
+        String key = String.format(STEPBYID, id);
+        TaskStep bo = (TaskStep) this.redisUtil.getCacheObject(key);
+        if (Objects.isNull(bo)) {
+            return this.stepPoMapper.findById(id).map(po -> this.build(po, Optional.of(key)));
+        } else {
+            this.build(bo);
+            return Optional.of(bo);
+        }
     }
 
     public List<TaskStep> findStepesByTaskId(Long taskId) {

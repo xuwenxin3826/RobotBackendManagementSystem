@@ -4,12 +4,15 @@ import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.taskmgt.common.constants.TaskLogEventType;
 import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.TaskRepository;
 import com.ruoyi.taskmgt.domain.TemplateRepository;
 import com.ruoyi.taskmgt.domain.bo.Task;
-import com.ruoyi.taskmgt.service.StepReuseService;
+import com.ruoyi.taskmgt.service.ITaskLogService;
+import com.ruoyi.taskmgt.service.ITaskService;
 import com.ruoyi.taskmgt.service.vo.TaskVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,22 +31,31 @@ import java.util.stream.Collectors;
 @Transactional
 @Slf4j
 @RequiredArgsConstructor
-public class TaskServiceImpl {
+public class TaskServiceImpl implements ITaskService {
     private final TaskRepository taskRepository;
     private final MessageSourceAccessor messageSourceAccessor;
     private final RedisCache redisUtil;
     private final TemplateRepository templateRepository;
     private final StepReuseService stepReuseService;
     private final StepRepository stepRepository;
+    private final TaskLogReuseService taskLogService;
 
     /**
      * @param task 即将新增的任务
      * @return
      * &#064;description    新增任务
      **/
+    @Override
     public TaskVo createTask(Task task) {
         task.setStatus(Task.NOTSTART);
         Task newTask = this.taskRepository.insert(task);
+        this.taskLogService.record(
+                newTask.getId(),
+                null,
+                TaskLogEventType.TASK_CREATE,
+                "创建任务：" + task.getName(),
+                SecurityUtils.getUsername()
+        );
         TaskVo taskVo = CloneFactory.copy(new TaskVo(), newTask);
         taskVo.setTemplateName(this.templateRepository.getTemplateNameById(task.getTemplateId()));
         return taskVo;
@@ -52,6 +64,7 @@ public class TaskServiceImpl {
     /**
      * @param task 保存了修改信息的任务
      **/
+    @Override
     public void updateTask(Task task) {
         if(!Objects.equals(task.getStatus(), Task.DISABLED)){
             String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), task.getId().toString(), task.getStatus().toString()};
@@ -69,7 +82,7 @@ public class TaskServiceImpl {
      * @return 修改后任务的redisKey
      * &#064;description   更新任务的状态
      **/
-    public List<String> updateTaskStatus(Task task, Byte status) {
+    private List<String> updateTaskStatus(Task task, Byte status) {
         if (Objects.nonNull(task) && task.allowTransitStatus(status)) {
             task.setStatus(status);
             return this.taskRepository.update(task);
@@ -83,6 +96,7 @@ public class TaskServiceImpl {
      * 删除任务（被禁用的任务才能删除）
      * @param id 要删除的任务的id
      **/
+    @Override
     public void deleteTask(Long id) {
         Task task = this.taskRepository.findById(id).orElseThrow(()-> {
             String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
@@ -90,8 +104,17 @@ public class TaskServiceImpl {
         });
 
         List<String> redisKeys = this.updateTaskStatus(task,Task.DELETED);
-        Set<String> redisStepKeys = this.stepRepository.deleteStepsByTaskId(id);
-        redisKeys.addAll(redisStepKeys);
+        this.taskLogService.record(
+                id,
+                null,
+                TaskLogEventType.TASK_DELETE,
+                " 任务" + task.getName() + "已删除 终止原因：",
+                SecurityUtils.getUsername()
+        );
+        if(StringUtils.isNotNull(task.getTemplateId())){
+            Set<String> redisStepKeys = this.stepRepository.deleteStepsByTaskId(id);
+            redisKeys.addAll(redisStepKeys);
+        }
         this.redisUtil.deleteObject(redisKeys);
 
     }
@@ -99,6 +122,7 @@ public class TaskServiceImpl {
     /**
      * 查询任务列表，
      */
+    @Override
     public List<TaskVo> retrieveTasks(Byte status, Integer isGroupTask, String name, Long robotId, Long robotGroupId, Integer taskType, Integer riskLevel, Long templateId) {
         List<Task> tasks = this.taskRepository.getTasks(status, isGroupTask, name, robotId, robotGroupId, taskType, riskLevel, templateId);
         if(StringUtils.isNull(isGroupTask)){
@@ -119,8 +143,10 @@ public class TaskServiceImpl {
         return tasks.stream()
                 .map(task -> {
                     TaskVo taskVo = CloneFactory.copy(new TaskVo(), task);
-                    String templateName = this.templateRepository.getTemplateNameById(task.getTemplateId());
-                    taskVo.setTemplateName(templateName);
+                    if(StringUtils.isNotNull(task.getTemplateId())){
+                        String templateName = this.templateRepository.getTemplateNameById(task.getTemplateId());
+                        taskVo.setTemplateName(templateName);
+                    }
                     log.info("TaskVo: {}", taskVo);
                     return taskVo;
                 })
@@ -132,13 +158,14 @@ public class TaskServiceImpl {
      * @param id 任务id
      * @return taskVo 任务Vo
      */
+    @Override
     public TaskVo getTask(Long id) {
         Task task = taskRepository.findById(id).orElseThrow(()-> {
             String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
             return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
         });
         TaskVo taskVo = CloneFactory.copy(new TaskVo(),task);
-        taskVo.setTemplateName(this.templateRepository.getTemplateNameById(task.getTemplateId()));
+        if(StringUtils.isNotNull(task.getTemplateId()))taskVo.setTemplateName(this.templateRepository.getTemplateNameById(task.getTemplateId()));
         return taskVo;
     }
 
@@ -146,6 +173,7 @@ public class TaskServiceImpl {
      * 禁用任务
      * @param id
      */
+    @Override
     public void banTask(Long id){
         Task task = taskRepository.findById(id).orElseThrow(()-> {
             String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
@@ -159,12 +187,13 @@ public class TaskServiceImpl {
      * 恢复任务
      * @param id 被恢复的任务的id
      */
+    @Override
     public void resumeTask(Long id){
         Task task = taskRepository.findById(id).orElseThrow(()-> {
             String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
             return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
         });
-        if(task.getStatus()!=Task.DISABLED){
+        if(!Objects.equals(task.getStatus(), Task.DISABLED)){
             String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), task.getId().toString(), task.getStatus().toString()};
             throw new TaskmgtException(ReturnNo.STATENOTALLOW,args,this.messageSourceAccessor.getMessage(ReturnNo.STATENOTALLOW.getMessage()));
         }
@@ -176,14 +205,24 @@ public class TaskServiceImpl {
      * 暂停任务
      * @param id 任务的id
      */
+    @Override
     public void pauseTask(Long id) {
         Task task = taskRepository.findById(id).orElseThrow(()-> {
             String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
             return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
         });
         List<String> redisKeys = this.updateTaskStatus(task,Task.PAUSED);
-        List<String> stepRedisKeys = this.stepReuseService.pauseStepsByTaskId(id);
-        redisKeys.addAll(stepRedisKeys);
+        this.taskLogService.record(
+                id,
+                null,
+                TaskLogEventType.TASK_PAUSE,
+                " 任务" + task.getName() + "已暂停",
+                SecurityUtils.getUsername()
+        );
+        if(StringUtils.isNotNull(task.getTemplateId())){
+            List<String> stepRedisKeys = this.stepReuseService.pauseStepsByTaskId(id);
+            redisKeys.addAll(stepRedisKeys);
+        }
         this.redisUtil.deleteObject(redisKeys);
     }
 
@@ -191,6 +230,7 @@ public class TaskServiceImpl {
      * 继续任务
      * @param id 被暂停的任务的id
      */
+    @Override
     public void continueTask(Long id) {
         Task task = this.taskRepository.findById(id).orElseThrow(()-> {
             String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
@@ -213,8 +253,17 @@ public class TaskServiceImpl {
         }
         if (StringUtils.isEmpty(tasks)){
             redisKeys = this.updateTaskStatus(task,Task.EXECUTING);
-            List<String> stepRedisKeys = this.stepReuseService.continueStepsByTaskId(id);
-            redisKeys.addAll(stepRedisKeys);
+            this.taskLogService.record(
+                    id,
+                    null,
+                    TaskLogEventType.TASK_RESUME,
+                    " 任务" + task.getName() + "已继续",
+                    SecurityUtils.getUsername()
+            );
+            if(StringUtils.isNotNull(task.getTemplateId())){
+                List<String> stepRedisKeys = this.stepReuseService.continueStepsByTaskId(id);
+                redisKeys.addAll(stepRedisKeys);
+            }
         }
         else redisKeys = this.updateTaskStatus(task,Task.PENDING);
         this.redisUtil.deleteObject(redisKeys);
@@ -224,6 +273,7 @@ public class TaskServiceImpl {
      * 停止任务
      * @param id 任务的id
      */
+    @Override
     public void terminateTask(Long id,String terminateReason) {
         Task task = taskRepository.findById(id).orElseThrow(()-> {
             String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
@@ -231,8 +281,17 @@ public class TaskServiceImpl {
         });
         task.setTerminateReason(terminateReason);
         List<String> redisKeys = this.updateTaskStatus(task,Task.TERMINATED);
-        List<String> stepRedisKeys = this.stepReuseService.terminatedStepsByTaskId(id);
-        redisKeys.addAll(stepRedisKeys);
+        this.taskLogService.record(
+                id,
+                null,
+                TaskLogEventType.TASK_TERMINATE,
+                " 任务" + task.getName() + "已终止 终止原因："+terminateReason,
+                SecurityUtils.getUsername()
+        );
+        if(StringUtils.isNotNull(task.getTemplateId())){
+            List<String> stepRedisKeys = this.stepReuseService.terminatedStepsByTaskId(id);
+            redisKeys.addAll(stepRedisKeys);
+        }
         this.redisUtil.deleteObject(redisKeys);
     }
 
@@ -240,12 +299,20 @@ public class TaskServiceImpl {
      * 取消准备中的任务
      * @param id 准备中任务的id
      */
+    @Override
     public void cancelTask(Long id) {
         Task task = taskRepository.findById(id).orElseThrow(()-> {
             String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), id.toString()};
             return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
         });
         List<String> redisKeys = this.updateTaskStatus(task,Task.NOTSTART);
+        this.taskLogService.record(
+                id,
+                null,
+                TaskLogEventType.TASK_CANCEL,
+                " 任务" + task.getName() + "已取消",
+                SecurityUtils.getUsername()
+        );
         this.redisUtil.deleteObject(redisKeys);
     }
 }

@@ -8,11 +8,12 @@ import com.ruoyi.common.utils.CloneFactory;
 import com.ruoyi.common.validation.NewGroup;
 import com.ruoyi.taskmgt.controller.dto.TaskStepDto;
 import com.ruoyi.taskmgt.domain.bo.TaskStep;
-import com.ruoyi.taskmgt.service.impl.StepServiceImpl;
+import com.ruoyi.taskmgt.service.IStepService;
 import com.ruoyi.taskmgt.service.vo.TaskStepVo;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,7 +25,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @RequestMapping("/taskmgt")
 public class StepController extends BaseController {
-    private StepServiceImpl stepService;
+    @Autowired
+    private IStepService stepService;
     @ApiOperation("创建任务步骤")
     @Log(title = "创建步骤", businessType = BusinessType.INSERT)
     @PostMapping("tasks/{id}/steps")

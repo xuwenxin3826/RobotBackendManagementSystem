@@ -229,7 +229,6 @@
         <module>ruoyi-generator</module>
         <module>ruoyi-common</module>
         <module>taskmgt</module>
-        <module>taskmgt-api</module>
         <module>ruoyi-data</module>
     </modules>
     <packaging>pom</packaging>

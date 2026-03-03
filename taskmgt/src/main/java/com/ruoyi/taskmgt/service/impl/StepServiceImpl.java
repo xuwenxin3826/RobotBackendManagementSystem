@@ -7,6 +7,7 @@ import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.TaskRepository;
 import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.domain.bo.TaskStep;
+import com.ruoyi.taskmgt.service.IStepService;
 import com.ruoyi.taskmgt.service.vo.TaskStepVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +24,12 @@ import java.util.stream.Collectors;
 @Transactional
 @Slf4j
 @RequiredArgsConstructor
-public class StepServiceImpl {
+public class StepServiceImpl implements IStepService {
     private final TaskRepository taskRepository;
     private final MessageSourceAccessor messageSourceAccessor;
     private final StepRepository stepRepository;
 
+    @Override
     public List<TaskStepVo> createSteps(Long taskId,List<TaskStep> steps) {
         Assert.notEmpty(steps, "steps cannot be empty");
         Task task = this.taskRepository.findById(taskId).orElseThrow(()-> {

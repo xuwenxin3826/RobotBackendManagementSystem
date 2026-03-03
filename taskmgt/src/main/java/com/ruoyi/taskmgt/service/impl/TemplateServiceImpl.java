@@ -6,6 +6,7 @@ import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
 import com.ruoyi.taskmgt.domain.TemplateRepository;
 import com.ruoyi.taskmgt.domain.bo.Template;
+import com.ruoyi.taskmgt.service.ITemplateService;
 import com.ruoyi.taskmgt.service.vo.TemplateVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,17 +23,19 @@ import java.util.stream.Collectors;
 @Transactional
 @Slf4j
 @RequiredArgsConstructor
-public class TemplateServiceImpl {
+public class TemplateServiceImpl implements ITemplateService {
     private final TemplateRepository templateRepository;
     private final MessageSourceAccessor messageSourceAccessor;
     private final RedisCache redisUtil;
 
+    @Override
     public TemplateVo createTemplate(Template template) {
         template.setStatus(Template.ENABLED);
         Template newTemplate = templateRepository.insert(template);
         return CloneFactory.copy(new TemplateVo(), newTemplate);
     }
 
+    @Override
     public void updateTemplate(Template template) {
         Template existing = templateRepository.findById(template.getId())
                 .orElseThrow(() -> {
@@ -51,6 +54,7 @@ public class TemplateServiceImpl {
         redisUtil.deleteObject(redisKeys);
     }
 
+    @Override
     public void deleteTemplate(Long id) {
         Template template = templateRepository.findById(id)
                 .orElseThrow(() -> {
@@ -68,6 +72,7 @@ public class TemplateServiceImpl {
         redisUtil.deleteObject(redisKeys);
     }
 
+    @Override
     public void banTemplate(Long id) {
         Template template = templateRepository.findById(id)
                 .orElseThrow(() -> {
@@ -79,6 +84,7 @@ public class TemplateServiceImpl {
         redisUtil.deleteObject(redisKeys);
     }
 
+    @Override
     public void resumeTemplate(Long id) {
         Template template = templateRepository.findById(id)
                 .orElseThrow(() -> {
@@ -108,17 +114,19 @@ public class TemplateServiceImpl {
         }
     }
 
+    @Override
     public List<TemplateVo> retrieveTemplates(String name, Byte status, Long robotGroupId) {
         List<Template> templates = templateRepository.getTemplates(name, status, robotGroupId);
         return templates.stream()
                 .map(template -> {
                     TemplateVo vo = CloneFactory.copy(new TemplateVo(), template);
-                    // vo.setRobotGroupName(...);  // 可通过Feign调用填充
+                    // vo.setRobotGroupName(...);
                     return vo;
                 })
                 .collect(Collectors.toList());
     }
 
+    @Override
     public TemplateVo getTemplate(Long id) {
         Template template = templateRepository.findById(id)
                 .orElseThrow(() -> {

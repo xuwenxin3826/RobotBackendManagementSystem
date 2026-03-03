@@ -122,6 +122,9 @@ public class Task extends BaseEntity implements Serializable, Stateful {
         }
     };
 
+    /** 具体描述 */
+    private String description;
+
     /** 风险等级（0正常 1风险 2高风险） */
     private Integer riskLevel;
 
