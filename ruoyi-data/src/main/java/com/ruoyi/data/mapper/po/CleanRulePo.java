@@ -20,5 +20,7 @@ public class CleanRulePo extends BaseEntity {
 
     private Integer status;
 
+    private String cronExpression;
+
     // getter / setter
 }

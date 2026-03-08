@@ -1,17 +1,19 @@
 package com.ruoyi.data.service.impl;
 
+import com.ruoyi.data.domain.RuleRegistry;
 import com.ruoyi.data.domain.bo.CleanRule;
 import com.ruoyi.data.domain.context.DataContext;
 import com.ruoyi.data.domain.enums.ExecuteMode;
-import com.ruoyi.data.domain.RuleRegistry;
 import com.ruoyi.data.mapper.CleanRuleMapper;
 import com.ruoyi.data.mapper.po.CleanRulePo;
 import com.ruoyi.data.service.ICleanRuleExecuteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -41,8 +43,37 @@ public class CleanRuleExecuteServiceImpl implements ICleanRuleExecuteService {
         System.out.println("数据源数量: " + rule.getDataSources().size());
 
         // 3️⃣ 校验执行模式
-        if (!ExecuteMode.IMMEDIATE.equals(rule.getExecuteMode())) {
-            throw new RuntimeException("当前版本仅支持立即执行模式");
+
+//        if (!ExecuteMode.IMMEDIATE.equals(rule.getExecuteMode())) {
+//            throw new RuntimeException("当前版本仅支持立即执行模式");
+//        }
+        ExecuteMode mode = rule.getExecuteMode();
+
+        if (mode == ExecuteMode.SCHEDULED) {
+
+            if (rule.getCronExpression() == null) {
+                throw new RuntimeException("定时任务未配置cron");
+            }
+
+            CronExpression cron = CronExpression.parse(rule.getCronExpression());
+
+            LocalDateTime lastRun = LocalDateTime.from(rule.getRunTime());
+
+            LocalDateTime base = lastRun == null
+                    ? LocalDateTime.now().minusMinutes(1)
+                    : lastRun;
+
+            LocalDateTime next = cron.next(base);
+
+            if (next == null || next.isAfter(LocalDateTime.now())) {
+                System.out.println("未到执行时间");
+                return;
+            }
+
+            if (next == null || next.isAfter(LocalDateTime.now())) {
+                System.out.println("未到执行时间");
+                return;
+            }
         }
 
         // 4️⃣ 构建上下文
@@ -72,6 +103,8 @@ public class CleanRuleExecuteServiceImpl implements ICleanRuleExecuteService {
 
         // 7️⃣ 执行SQL
         executeSql(context);
+
+        cleanRuleMapper.updateRuntime(id, LocalDateTime.now());//此次可添加try-catch进行执行成功的确认
     }
 
     private void executeSql(DataContext context) {

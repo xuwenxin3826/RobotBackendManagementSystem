@@ -1,7 +1,8 @@
 package com.ruoyi.data.domain.bo;
 
 import com.ruoyi.data.domain.context.DataContext;
-import com.ruoyi.data.domain.enums.*;
+import com.ruoyi.data.domain.enums.DataSourceType;
+import com.ruoyi.data.domain.enums.ExecuteMode;
 import com.ruoyi.data.domain.strategy.CleanStrategy;
 import com.ruoyi.data.domain.strategy.StrategyFactory;
 import lombok.Data;
@@ -25,6 +26,8 @@ public class CleanRule {
     private List<DataSourceType> dataSources;
 
     private CleanRuleConfig config;
+
+    private String cronExpression;
 
     /* ========= 领域行为 ========= */
 
