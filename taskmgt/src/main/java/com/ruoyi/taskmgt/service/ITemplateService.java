@@ -7,17 +7,17 @@ import com.ruoyi.taskmgt.service.vo.TemplateVo;
 import java.util.List;
 
 public interface ITemplateService {
-    public TemplateVo createTemplate(Template template);
+    TemplateVo createTemplate(Template template);
 
-    public void updateTemplate(Template template);
+    void updateTemplate(Template template);
 
-    public void deleteTemplate(Long id);
+    void deleteTemplate(Long id);
 
-    public void banTemplate(Long id);
+    void banTemplate(Long id);
 
-    public void resumeTemplate(Long id);
+    void resumeTemplate(Long id);
 
-    public List<TemplateVo> retrieveTemplates(String name, Byte status, Long robotGroupId);
+    List<TemplateVo> retrieveTemplates(String name, Byte status, Long robotGroupId);
 
-    public TemplateVo getTemplate(Long id);
+    TemplateVo getTemplate(Long id);
 }

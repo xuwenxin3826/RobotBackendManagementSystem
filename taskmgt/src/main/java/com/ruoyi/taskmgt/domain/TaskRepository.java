@@ -4,6 +4,7 @@ import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.mapper.TaskPoMapper;
@@ -30,14 +31,11 @@ public class TaskRepository {
     private final MessageSourceAccessor messageSourceAccessor;
     private final static String TASKBYNAME = "TN_%s";
     private final static String TASKBYID = "T%d";
-    private final static String TASK_STEP_KEY = "TS%d";
-    private final StepRepository stepRepository;
 
-    public TaskRepository(TaskPoMapper taskPoMapper, RedisCache redisUtil, MessageSourceAccessor messageSourceAccessor, @Lazy StepRepository stepRepository) {
+    public TaskRepository(TaskPoMapper taskPoMapper, RedisCache redisUtil, MessageSourceAccessor messageSourceAccessor) {
         this.taskPoMapper = taskPoMapper;
         this.redisUtil = redisUtil;
         this.messageSourceAccessor = messageSourceAccessor;
-        this.stepRepository = stepRepository;
     }
 
     /**
@@ -112,6 +110,8 @@ public class TaskRepository {
         Assert.notNull(task, "TaskRepository.insert: taskcore can not be null.");
         task.setId(null);
         TaskPo taskPo = CloneFactory.copyNotNull(new TaskPo(), task);
+        taskPo.setCreateTime(new Date());
+        taskPo.setCreateBy(SecurityUtils.getUsername());
         try {
             TaskPo savedPo = this.taskPoMapper.save(taskPo);
             return CloneFactory.copy(new Task(), savedPo);
@@ -135,7 +135,7 @@ public class TaskRepository {
             return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
         });
         TaskPo newPo = CloneFactory.copyNotNull(oldtaskPo, task);
-
+        newPo.setUpdateTime(new Date());
         try {
             this.taskPoMapper.save(newPo);
         } catch (DataIntegrityViolationException e) {

@@ -45,11 +45,11 @@ public class TaskStep extends BaseEntity implements Serializable, Stateful {
     private Byte status;
 
     //任务状态
-    public final static Byte EXECUTING = 1;
-    public final static Byte PAUSED = 3;
     public final static Byte NOTSTART = 0;
-    public final static Byte TERMINATED= 4;
+    public final static Byte EXECUTING = 1;
     public final static Byte FINISHED =2;
+    public final static Byte PAUSED = 3;
+    public final static Byte TERMINATED= 4;
 
     public static final Map<Byte, String> STATUSNAMES = new HashMap<>() {
         {

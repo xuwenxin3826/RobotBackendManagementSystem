@@ -17,10 +17,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.context.support.MessageSourceAccessor;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import javax.transaction.Transactional;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,6 +27,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Transactional
 public class TaskLogServiceImpl implements ITaskLogService {
 
     private final TaskLogRepository taskLogRepository;
@@ -60,7 +60,6 @@ public class TaskLogServiceImpl implements ITaskLogService {
         }).collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     @Override
     public TaskLogVo getLog(Long id) {
         TaskLog taskLog = taskLogRepository.findById(id)

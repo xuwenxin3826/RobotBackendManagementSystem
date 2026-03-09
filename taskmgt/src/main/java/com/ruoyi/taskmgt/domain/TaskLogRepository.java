@@ -43,6 +43,7 @@ public class TaskLogRepository {
         Assert.notNull(taskLog, "TaskLogRepository.insert: taskLog must not be null");
         taskLog.setId(null);
         TaskLogPo po = CloneFactory.copy(new TaskLogPo(), taskLog);
+        po.setCreateTime(new Date());
         TaskLogPo saved = taskLogPoMapper.save(po);
         return CloneFactory.copy(new TaskLog(), saved);
     }

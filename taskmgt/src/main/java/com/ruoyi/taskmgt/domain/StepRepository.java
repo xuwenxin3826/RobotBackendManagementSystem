@@ -6,7 +6,6 @@ import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
-import com.ruoyi.taskmgt.common.constants.TaskLogEventType;
 import com.ruoyi.taskmgt.domain.bo.TaskStep;
 import com.ruoyi.taskmgt.mapper.StepPoMapper;
 import com.ruoyi.taskmgt.mapper.po.TaskStepPo;
@@ -17,7 +16,6 @@ import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.Assert;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -133,7 +131,8 @@ public class StepRepository {
             return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
         });
         TaskStepPo newPo = CloneFactory.copyNotNull(oldstepPo, step);
-
+        newPo.setUpdateTime(new Date());
+        newPo.setUpdateBy(SecurityUtils.getUsername());
         try {
             this.stepPoMapper.save(newPo);
         } catch (DataIntegrityViolationException e) {
@@ -154,6 +153,8 @@ public class StepRepository {
         Assert.notNull(step, "StepRepository.insert: step can not be null.");
         step.setId(null);
         TaskStepPo stepPo = CloneFactory.copyNotNull(new TaskStepPo(), step);
+        stepPo.setCreateTime(new Date());
+        stepPo.setCreateBy(SecurityUtils.getUsername());
         try {
             TaskStepPo savedPo = this.stepPoMapper.save(stepPo);
             return CloneFactory.copy(new TaskStep(), savedPo);

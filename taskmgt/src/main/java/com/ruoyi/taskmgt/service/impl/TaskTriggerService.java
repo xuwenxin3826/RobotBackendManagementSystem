@@ -1,6 +1,7 @@
 package com.ruoyi.taskmgt.service.impl;
 
 import com.ruoyi.common.core.redis.RedisCache;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.taskmgt.common.constants.TaskLogEventType;
 import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.TaskRepository;
@@ -11,11 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
+@Transactional
 public class TaskTriggerService {
 
     @Autowired
@@ -114,6 +117,7 @@ public class TaskTriggerService {
         }
 
         task.setStatus(Task.PENDING);
+        task.setUpdateBy("system");
         List<String> redisKeys = taskRepository.update(task);
         if (redisKeys != null && !redisKeys.isEmpty()) {
             redisUtil.deleteObject(redisKeys);
@@ -160,6 +164,7 @@ public class TaskTriggerService {
                     taskLogService.record(task.getId(), null, TaskLogEventType.ROBOT_STATUS_CHANGE,
                             "组内机器人状态恢复正常，任务风险清除", "system");
                 }
+                task.setUpdateBy("system");
                 List<String> redisKeys = taskRepository.update(task);
                 if (redisKeys != null && !redisKeys.isEmpty()) {
                     redisUtil.deleteObject(redisKeys);
@@ -169,12 +174,12 @@ public class TaskTriggerService {
     }
 
     private void updateTaskRisk(Task task, String newStatus) {
-        if (task.getStatus() == Task.DISABLED || task.getStatus() == Task.TERMINATED ||
-                task.getStatus() == Task.FINISHED || task.getStatus() == Task.DELETED) {
+        if (Objects.equals(task.getStatus(), Task.DISABLED) || Objects.equals(task.getStatus(), Task.TERMINATED) ||
+                Objects.equals(task.getStatus(), Task.FINISHED) || Objects.equals(task.getStatus(), Task.DELETED)) {
             return;
         }
         if ("offline".equals(newStatus) || "fault".equals(newStatus) || "low_battery".equals(newStatus)) {
-            int riskLevel = (task.getStatus() == Task.EXECUTING) ? 2 : 1;
+            int riskLevel = (Objects.equals(task.getStatus(), Task.EXECUTING)) ? 2 : 1;
             task.setRiskLevel(riskLevel);
             taskLogService.record(task.getId(), null, TaskLogEventType.ROBOT_STATUS_CHANGE,
                     String.format("机器人状态变更为%s，任务标记为%s", newStatus,
@@ -182,6 +187,7 @@ public class TaskTriggerService {
         } else if ("online".equals(newStatus)) {
             // 机器人恢复正常，不清除风险，等待管理员手动解决
         }
+        task.setUpdateBy("system");
         List<String> redisKeys = taskRepository.update(task);
         if (redisKeys != null && !redisKeys.isEmpty()) {
             redisUtil.deleteObject(redisKeys);
@@ -251,6 +257,7 @@ public class TaskTriggerService {
         }
         task.setStatus(Task.EXECUTING);
         task.setPendingOrder(null); // 清空准备顺序
+        task.setUpdateBy("system");
         List<String> redisKeys = taskRepository.update(task);
         if (redisKeys != null && !redisKeys.isEmpty()) {
             redisUtil.deleteObject(redisKeys);
@@ -269,7 +276,7 @@ public class TaskTriggerService {
     }
 
     private void startStep(TaskStep step) {
-        if (step.getStatus() != TaskStep.NOTSTART) return;
+        if (!Objects.equals(step.getStatus(), TaskStep.NOTSTART)) return;
         step.setStatus(TaskStep.EXECUTING);
         step.setStartTime(new Date());
         List<String> redisKeys = stepRepository.update(step);

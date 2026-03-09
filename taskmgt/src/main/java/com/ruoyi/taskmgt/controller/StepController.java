@@ -10,6 +10,7 @@ import com.ruoyi.taskmgt.controller.dto.TaskStepDto;
 import com.ruoyi.taskmgt.domain.bo.TaskStep;
 import com.ruoyi.taskmgt.service.IStepService;
 import com.ruoyi.taskmgt.service.vo.TaskStepVo;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Api(tags = "任务步骤管理")
 @RestController
 @Slf4j
 @RequiredArgsConstructor

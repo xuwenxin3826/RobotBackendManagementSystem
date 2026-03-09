@@ -4,13 +4,13 @@ import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.taskmgt.common.constants.TaskLogEventType;
 import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.TaskRepository;
 import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.domain.bo.TaskStep;
 import com.ruoyi.taskmgt.service.IStepService;
-import com.ruoyi.taskmgt.service.ITaskLogService;
 import com.ruoyi.taskmgt.service.vo.TaskStepVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +23,7 @@ import javax.transaction.Transactional;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -76,6 +77,7 @@ public class StepServiceImpl implements IStepService {
         // 标记当前步骤完成
         step.setStatus(TaskStep.FINISHED);
         step.setEndTime(new Date());
+        step.setUpdateBy("system");
         List<String> redisKeys = stepRepository.update(step);
         if (redisKeys != null && !redisKeys.isEmpty()) {
             redisUtil.deleteObject(redisKeys);
@@ -90,7 +92,7 @@ public class StepServiceImpl implements IStepService {
                 .min(Comparator.comparing(TaskStep::getOrderNum))
                 .orElse(null);
 
-        if (nextStep != null && nextStep.getStatus() == TaskStep.NOTSTART) {
+        if (nextStep != null && Objects.equals(nextStep.getStatus(), TaskStep.NOTSTART)) {
             startStep(nextStep);
         } else {
             // 所有步骤完成，任务结束
@@ -101,6 +103,7 @@ public class StepServiceImpl implements IStepService {
                     });
             if (task.allowTransitStatus(Task.FINISHED)) {
                 task.setStatus(Task.FINISHED);
+                task.setUpdateBy("system");
                 List<String> taskRedisKeys = taskRepository.update(task);
                 if (taskRedisKeys != null && !taskRedisKeys.isEmpty()) {
                     redisUtil.deleteObject(taskRedisKeys);
@@ -114,6 +117,7 @@ public class StepServiceImpl implements IStepService {
     private void startStep(TaskStep step) {
         step.setStatus(TaskStep.EXECUTING);
         step.setStartTime(new Date());
+        step.setUpdateBy("system");
         List<String> redisKeys = stepRepository.update(step);
         if (redisKeys != null && !redisKeys.isEmpty()) {
             redisUtil.deleteObject(redisKeys);

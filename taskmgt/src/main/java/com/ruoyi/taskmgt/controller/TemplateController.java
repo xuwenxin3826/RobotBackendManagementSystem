@@ -11,6 +11,7 @@ import com.ruoyi.taskmgt.controller.dto.TemplateDto;
 import com.ruoyi.taskmgt.domain.bo.Template;
 import com.ruoyi.taskmgt.service.ITemplateService;
 import com.ruoyi.taskmgt.service.vo.TemplateVo;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Api(tags = "任务模板管理")
 @RestController
 @Slf4j
 @RequiredArgsConstructor

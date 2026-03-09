@@ -4,6 +4,7 @@ import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.taskmgt.domain.bo.Template;
 import com.ruoyi.taskmgt.mapper.TemplatePoMapper;
@@ -17,10 +18,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.util.Assert;
 
 import javax.persistence.criteria.Predicate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -96,6 +94,8 @@ public class TemplateRepository {
         Assert.notNull(template, "TemplateRepository.insert: template can not be null.");
         template.setId(null);
         TemplatePo templatePo = CloneFactory.copyNotNull(new TemplatePo(), template);
+        templatePo.setCreateTime(new Date());
+        templatePo.setCreateBy(SecurityUtils.getUsername());
         try {
             TemplatePo savedPo = this.templatePoMapper.save(templatePo);
             return CloneFactory.copy(new Template(), savedPo);
@@ -121,7 +121,8 @@ public class TemplateRepository {
                             this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
                 });
         TemplatePo newPo = CloneFactory.copyNotNull(oldPo, template);
-
+        newPo.setUpdateTime(new Date());
+        newPo.setUpdateBy(SecurityUtils.getUsername());
         try {
             this.templatePoMapper.save(newPo);
         } catch (DataIntegrityViolationException e) {

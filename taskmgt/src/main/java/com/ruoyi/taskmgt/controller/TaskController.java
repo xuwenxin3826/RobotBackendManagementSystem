@@ -12,6 +12,7 @@ import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.service.ITaskService;
 import com.ruoyi.taskmgt.service.vo.TaskAbnormalVo;
 import com.ruoyi.taskmgt.service.vo.TaskVo;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Api(tags = "任务管理")
 @RestController
 @Slf4j
 @RequiredArgsConstructor

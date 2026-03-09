@@ -72,6 +72,7 @@ public class TaskServiceImpl implements ITaskService {
             throw new TaskmgtException(ReturnNo.STATENOTALLOW,args,this.messageSourceAccessor.getMessage(ReturnNo.STATENOTALLOW.getMessage()));
         }
         else {
+            task.setUpdateBy(SecurityUtils.getUsername());
             List<String> redisKeys = this.taskRepository.update(task);
             this.redisUtil.deleteObject(redisKeys);
         }
@@ -346,6 +347,7 @@ public class TaskServiceImpl implements ITaskService {
         }
 
         task.setRiskLevel(0);
+        task.setUpdateBy(SecurityUtils.getUsername());
         List<String> redisKeys = taskRepository.update(task);
         if (redisKeys != null && !redisKeys.isEmpty()) {
             redisUtil.deleteObject(redisKeys);
