@@ -11,8 +11,9 @@ import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.TaskRepository;
 import com.ruoyi.taskmgt.domain.TemplateRepository;
 import com.ruoyi.taskmgt.domain.bo.Task;
-import com.ruoyi.taskmgt.service.ITaskLogService;
 import com.ruoyi.taskmgt.service.ITaskService;
+import com.ruoyi.taskmgt.service.vo.RobotStatus;
+import com.ruoyi.taskmgt.service.vo.TaskAbnormalVo;
 import com.ruoyi.taskmgt.service.vo.TaskVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -314,5 +315,91 @@ public class TaskServiceImpl implements ITaskService {
                 SecurityUtils.getUsername()
         );
         this.redisUtil.deleteObject(redisKeys);
+    }
+
+    @Override
+    public void resolveRisk(Long taskId) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> {
+                    String[] args = {messageSourceAccessor.getMessage("Task.name", LocaleContextHolder.getLocale()), taskId.toString()};
+                    return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,
+                            messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
+                });
+
+        if (Objects.equals(task.getStatus(), Task.DELETED)) {
+            String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), task.getId().toString(), task.getStatus().toString()};
+            throw new TaskmgtException(ReturnNo.STATENOTALLOW,args,this.messageSourceAccessor.getMessage(ReturnNo.STATENOTALLOW.getMessage()));
+        }
+
+        // 检查机器人状态
+        boolean allNormal;
+        if (task.getIsGroupTask() == 0) {
+            allNormal = checkRobotNormal(task.getRobotId());
+        } else {
+            List<Long> robotIds = getMockRobotIdsByGroupId(task.getRobotGroupId()); // 待替换
+            allNormal = robotIds.stream().allMatch(this::checkRobotNormal);
+        }
+
+        if (!allNormal) {
+            String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), task.getId().toString()};
+            throw new TaskmgtException(ReturnNo.ROBOT_STATUS_ABNORMAL,args,this.messageSourceAccessor.getMessage(ReturnNo.ROBOT_STATUS_ABNORMAL.getMessage()));
+        }
+
+        task.setRiskLevel(0);
+        List<String> redisKeys = taskRepository.update(task);
+        if (redisKeys != null && !redisKeys.isEmpty()) {
+            redisUtil.deleteObject(redisKeys);
+        }
+        taskLogService.record(taskId, null, "RISK_RESOLVED",
+                "管理员手动解决任务风险", SecurityUtils.getUsername());
+    }
+
+    @Override
+    public List<TaskAbnormalVo> getAbnormalTasks(Integer riskLevel, Long robotId, Long robotGroupId) {
+        List<Task> tasks = taskRepository.getTasks(null, null, null, robotId, robotGroupId, null, riskLevel, null);
+        return tasks.stream().map(this::buildAbnormalVo).collect(Collectors.toList());
+    }
+
+    private TaskAbnormalVo buildAbnormalVo(Task task) {
+        TaskAbnormalVo vo =  CloneFactory.copy(new TaskAbnormalVo(), task);
+        if (task.getTemplateId() != null) {
+            vo.setTemplateName(templateRepository.getTemplateNameById(task.getTemplateId()));
+        }
+        // 填充机器人状态摘要
+        if (task.getIsGroupTask() == 0) {
+            String robotStatus = getMockRobotStatus(task.getRobotId());
+            vo.setRobotStatusSummary(robotStatus);
+            vo.setRobotStatuses(List.of(new RobotStatus(task.getRobotId(), getMockRobotName(task.getRobotId()), robotStatus)));
+        } else {
+            List<RobotStatus> robotStatuses = getMockRobotsByGroupId(task.getRobotGroupId());
+            String summary = "normal";
+            for (RobotStatus rs : robotStatuses) {
+                if ("offline".equals(rs.getStatus()) || "fault".equals(rs.getStatus())) {
+                    summary = "abnormal";
+                    break;
+                } else if ("low_battery".equals(rs.getStatus()) && "normal".equals(summary)) {
+                    summary = "low_battery";
+                }
+            }
+            vo.setRobotStatusSummary(summary);
+            vo.setRobotStatuses(robotStatuses);
+        }
+        return vo;
+    }
+
+    // ==================== 模拟方法 ====================
+    private boolean checkRobotNormal(Long robotId) {
+        String status = getMockRobotStatus(robotId);
+        return "online".equals(status) && !"low_battery".equals(status);
+    }
+
+    private String getMockRobotStatus(Long robotId) { return "online"; }
+    private String getMockRobotName(Long robotId) { return "机器人" + robotId; }
+    private List<Long> getMockRobotIdsByGroupId(Long groupId) { return List.of(1L, 2L); }
+    private List<RobotStatus> getMockRobotsByGroupId(Long groupId) {
+        return List.of(
+                new RobotStatus(1L, "机器人1", "online"),
+                new RobotStatus(2L, "机器人2", "online")
+        );
     }
 }

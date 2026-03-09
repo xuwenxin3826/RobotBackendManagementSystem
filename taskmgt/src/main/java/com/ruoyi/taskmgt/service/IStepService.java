@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface IStepService {
     public List<TaskStepVo> createSteps(Long taskId, List<TaskStep> steps);
+
+    void completeStep(Long id);
 }

@@ -14,11 +14,12 @@ public interface TaskLogEventType {
     String TASK_DELETE = "TASK_DELETE";
     String TASK_UPDATE = "TASK_UPDATE";
     String TASK_ERROR = "TASK_ERROR";
-
     String STEP_START = "STEP_START";
     String STEP_COMPLETE = "STEP_COMPLETE";
     String STEP_PAUSE = "STEP_PAUSE";
     String STEP_RESUME = "STEP_RESUME";
     String STEP_TERMINATE = "STEP_TERMINATE";
     String STEP_ERROR = "STEP_ERROR";
+    String ROBOT_STATUS_CHANGE = "ROBOT_STATUS_CHANGE";
+    String TASK_PENDING = "TASK_PENDING";
 }

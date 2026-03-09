@@ -87,6 +87,38 @@ export const constantRoutes = [
         meta: { title: '个人中心', icon: 'user' }
       }
     ]
+  },
+  {
+    path: '/taskmgt',
+    component: Layout,
+    hidden: false,
+    meta: { title: '任务管理', icon: 'el-icon-s-operation' },
+    children: [
+      {
+        path: 'templates',
+        name: 'TaskTemplate',
+        component: () => import('@/views/taskmgt/TaskTemplate'),
+        meta: { title: '模板管理', icon: 'el-icon-document' }
+      },
+      {
+        path: 'tasks',
+        name: 'TaskList',
+        component: () => import('@/views/taskmgt/TaskList'),
+        meta: { title: '任务列表', icon: 'el-icon-list' }
+      },
+      {
+        path: 'schedule',
+        name: 'TaskSchedule',
+        component: () => import('@/views/taskmgt/TaskSchedule'),
+        meta: { title: '计划管理', icon: 'el-icon-time' }
+      },
+      {
+        path: 'abnormal',
+        name: 'TaskAbnormal',
+        component: () => import('@/views/taskmgt/TaskAbnormal'),
+        meta: { title: '异常处理', icon: 'el-icon-warning' }
+      }
+    ]
   }
 ]
 

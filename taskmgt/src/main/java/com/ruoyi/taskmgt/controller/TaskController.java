@@ -10,6 +10,7 @@ import com.ruoyi.common.validation.NewGroup;
 import com.ruoyi.taskmgt.controller.dto.TaskDto;
 import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.service.ITaskService;
+import com.ruoyi.taskmgt.service.vo.TaskAbnormalVo;
 import com.ruoyi.taskmgt.service.vo.TaskVo;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -126,4 +127,26 @@ public class TaskController extends BaseController {
         this.taskService.cancelTask(id);
         return success();
     }
+
+    @ApiOperation("获取异常任务列表")
+    @GetMapping("/tasks/abnormal")
+    public TableDataInfo listAbnormalTasks(
+            @RequestParam(required = false) Integer riskLevel,
+            @RequestParam(required = false) Long robotId,
+            @RequestParam(required = false) Long robotGroupId,
+            @RequestParam(required = false,defaultValue = "1") Integer pageNum,
+            @RequestParam(required = false,defaultValue = "10") Integer pageSize) {
+        startPage(pageNum, pageSize);
+        List<TaskAbnormalVo> list = taskService.getAbnormalTasks(riskLevel, robotId, robotGroupId);
+        return getDataTable(list);
+    }
+
+    @ApiOperation("解决任务风险")
+    @Log(title = "解决任务风险", businessType = BusinessType.UPDATE)
+    @PutMapping("/tasks/{id}/resolve")
+    public AjaxResult resolveRisk(@PathVariable Long id) {
+        taskService.resolveRisk(id);
+        return success();
+    }
 }
+

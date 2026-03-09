@@ -1,13 +1,16 @@
 package com.ruoyi.taskmgt.service.impl;
 
+import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
+import com.ruoyi.taskmgt.common.constants.TaskLogEventType;
 import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.TaskRepository;
 import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.domain.bo.TaskStep;
 import com.ruoyi.taskmgt.service.IStepService;
+import com.ruoyi.taskmgt.service.ITaskLogService;
 import com.ruoyi.taskmgt.service.vo.TaskStepVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import javax.transaction.Transactional;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +33,8 @@ public class StepServiceImpl implements IStepService {
     private final TaskRepository taskRepository;
     private final MessageSourceAccessor messageSourceAccessor;
     private final StepRepository stepRepository;
+    private final TaskLogReuseService taskLogReuseService;
+    private final RedisCache redisUtil;
 
     @Override
     public List<TaskStepVo> createSteps(Long taskId,List<TaskStep> steps) {
@@ -51,5 +58,67 @@ public class StepServiceImpl implements IStepService {
                     return vo;
                 })
                 .collect(Collectors.toList());
+    }
+    @Override
+    public void completeStep(Long stepId) {
+        TaskStep step = stepRepository.findById(stepId)
+                .orElseThrow(() -> {
+                    String[] args = {messageSourceAccessor.getMessage("Step.name", LocaleContextHolder.getLocale()), stepId.toString()};
+                    return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,
+                            messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
+                });
+
+        if (step.getStatus() != TaskStep.EXECUTING) {
+            String[] args = new String[]{this.messageSourceAccessor.getMessage("Step.name",LocaleContextHolder.getLocale()), step.getId().toString(), step.getStatus().toString()};
+            throw new TaskmgtException(ReturnNo.STATENOTALLOW,args,this.messageSourceAccessor.getMessage(ReturnNo.STATENOTALLOW.getMessage()));
+        }
+
+        // 标记当前步骤完成
+        step.setStatus(TaskStep.FINISHED);
+        step.setEndTime(new Date());
+        List<String> redisKeys = stepRepository.update(step);
+        if (redisKeys != null && !redisKeys.isEmpty()) {
+            redisUtil.deleteObject(redisKeys);
+        }
+        taskLogReuseService.record(step.getTaskId(), stepId, TaskLogEventType.STEP_COMPLETE,
+                "步骤 " + step.getStepName() + " 完成", "system");
+
+        // 查找下一个步骤
+        List<TaskStep> steps = stepRepository.findStepesByTaskId(step.getTaskId());
+        TaskStep nextStep = steps.stream()
+                .filter(s -> s.getOrderNum() > step.getOrderNum())
+                .min(Comparator.comparing(TaskStep::getOrderNum))
+                .orElse(null);
+
+        if (nextStep != null && nextStep.getStatus() == TaskStep.NOTSTART) {
+            startStep(nextStep);
+        } else {
+            // 所有步骤完成，任务结束
+            Task task = taskRepository.findById(step.getTaskId())
+                    .orElseThrow(() -> {
+                        String[] args = new String[]{this.messageSourceAccessor.getMessage("Task.name",LocaleContextHolder.getLocale()), step.getTaskId().toString()};
+                        return new TaskmgtException(ReturnNo.RESOURCE_ID_NOTEXIST, args,this.messageSourceAccessor.getMessage(ReturnNo.RESOURCE_ID_NOTEXIST.getMessage()));
+                    });
+            if (task.allowTransitStatus(Task.FINISHED)) {
+                task.setStatus(Task.FINISHED);
+                List<String> taskRedisKeys = taskRepository.update(task);
+                if (taskRedisKeys != null && !taskRedisKeys.isEmpty()) {
+                    redisUtil.deleteObject(taskRedisKeys);
+                }
+                taskLogReuseService.record(task.getId(), null, TaskLogEventType.TASK_COMPLETE,
+                        "任务所有步骤完成", "system");
+            }
+        }
+    }
+
+    private void startStep(TaskStep step) {
+        step.setStatus(TaskStep.EXECUTING);
+        step.setStartTime(new Date());
+        List<String> redisKeys = stepRepository.update(step);
+        if (redisKeys != null && !redisKeys.isEmpty()) {
+            redisUtil.deleteObject(redisKeys);
+        }
+        taskLogReuseService.record(step.getTaskId(), step.getId(), TaskLogEventType.STEP_START,
+                "步骤 " + step.getStepName() + " 开始执行", "system");
     }
 }

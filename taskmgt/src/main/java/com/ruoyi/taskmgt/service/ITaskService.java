@@ -2,6 +2,7 @@ package com.ruoyi.taskmgt.service;
 
 import com.ruoyi.taskmgt.domain.bo.Task;
 import com.ruoyi.taskmgt.service.vo.TaskVo;
+import com.ruoyi.taskmgt.service.vo.TaskAbnormalVo;
 
 import java.util.List;
 
@@ -71,4 +72,8 @@ public interface ITaskService {
      * @param id 准备中任务的id
      */
     public void cancelTask(Long id);
+
+    List<TaskAbnormalVo> getAbnormalTasks(Integer riskLevel, Long robotId, Long robotGroupId);
+
+    void resolveRisk(Long id);
 }

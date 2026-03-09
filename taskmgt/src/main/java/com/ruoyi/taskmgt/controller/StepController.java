@@ -38,4 +38,12 @@ public class StepController extends BaseController {
         List<TaskStepVo> result = this.stepService.createSteps(taskId,steps);
         return success(result);
     }
+
+    @ApiOperation("完成步骤")
+    @Log(title = "完成步骤", businessType = BusinessType.UPDATE)
+    @PutMapping("/{id}/complete")
+    public AjaxResult completeStep(@PathVariable Long id) {
+        stepService.completeStep(id);
+        return success();
+    }
 }
