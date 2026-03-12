@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.robots.mapper.RobotPositionHistoryMapper">
+    
+    <resultMap type="RobotPositionHistory" id="RobotPositionHistoryResult">
+        <result property="id"    column="id"    />
+        <result property="robotId"    column="robot_id"    />
+        <result property="recordTime"    column="record_time"    />
+        <result property="locationArea"    column="location_area"    />
+        <result property="specificLocation"    column="specific_location"    />
+        <result property="coordinateX"    column="coordinate_x"    />
+        <result property="coordinateY"    column="coordinate_y"    />
+        <result property="moveSpeed"    column="move_speed"    />
+        <result property="statusDesc"    column="status_desc"    />
+    </resultMap>
+
+    <sql id="selectRobotPositionHistoryVo">
+        select id, robot_id, record_time, location_area, specific_location, coordinate_x, coordinate_y, move_speed, status_desc from robot_position_history
+    </sql>
+
+    <select id="selectRobotPositionHistoryList" parameterType="RobotPositionHistory" resultMap="RobotPositionHistoryResult">
+        <include refid="selectRobotPositionHistoryVo"/>
+        <where>  
+            <if test="robotId != null  and robotId != ''"> and robot_id = #{robotId}</if>
+        </where>
+    </select>
+    
+    <select id="selectRobotPositionHistoryById" parameterType="Long" resultMap="RobotPositionHistoryResult">
+        <include refid="selectRobotPositionHistoryVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertRobotPositionHistory" parameterType="RobotPositionHistory" useGeneratedKeys="true" keyProperty="id">
+        insert into robot_position_history
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="robotId != null and robotId != ''">robot_id,</if>
+            <if test="recordTime != null">record_time,</if>
+            <if test="locationArea != null and locationArea != ''">location_area,</if>
+            <if test="specificLocation != null and specificLocation != ''">specific_location,</if>
+            <if test="coordinateX != null">coordinate_x,</if>
+            <if test="coordinateY != null">coordinate_y,</if>
+            <if test="moveSpeed != null">move_speed,</if>
+            <if test="statusDesc != null and statusDesc != ''">status_desc,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="robotId != null and robotId != ''">#{robotId},</if>
+            <if test="recordTime != null">#{recordTime},</if>
+            <if test="locationArea != null and locationArea != ''">#{locationArea},</if>
+            <if test="specificLocation != null and specificLocation != ''">#{specificLocation},</if>
+            <if test="coordinateX != null">#{coordinateX},</if>
+            <if test="coordinateY != null">#{coordinateY},</if>
+            <if test="moveSpeed != null">#{moveSpeed},</if>
+            <if test="statusDesc != null and statusDesc != ''">#{statusDesc},</if>
+         </trim>
+    </insert>
+
+    <update id="updateRobotPositionHistory" parameterType="RobotPositionHistory">
+        update robot_position_history
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="robotId != null and robotId != ''">robot_id = #{robotId},</if>
+            <if test="recordTime != null">record_time = #{recordTime},</if>
+            <if test="locationArea != null and locationArea != ''">location_area = #{locationArea},</if>
+            <if test="specificLocation != null and specificLocation != ''">specific_location = #{specificLocation},</if>
+            <if test="coordinateX != null">coordinate_x = #{coordinateX},</if>
+            <if test="coordinateY != null">coordinate_y = #{coordinateY},</if>
+            <if test="moveSpeed != null">move_speed = #{moveSpeed},</if>
+            <if test="statusDesc != null and statusDesc != ''">status_desc = #{statusDesc},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteRobotPositionHistoryById" parameterType="Long">
+        delete from robot_position_history where id = #{id}
+    </delete>
+
+    <delete id="deleteRobotPositionHistoryByIds" parameterType="String">
+        delete from robot_position_history where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

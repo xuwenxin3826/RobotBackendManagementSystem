@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.robots.mapper.RobotsMapper">
+    
+    <resultMap type="Robots" id="RobotsResult">
+        <result property="id"    column="id"    />
+        <result property="code"    column="code"    />
+        <result property="name"    column="name"    />
+        <result property="groupId"    column="group_id"    />
+        <result property="manufacturer"    column="manufacturer"    />
+        <result property="productionDate"    column="production_date"    />
+        <result property="area"    column="area"    />
+        <result property="status"    column="status"    />
+        <result property="hardwareStatus"    column="hardware_status"    />
+        <result property="taskStatus"    column="task_status"    />
+        <result property="battery"    column="battery"    />
+        <result property="createdAt"    column="created_at"    />
+    </resultMap>
+
+    <sql id="selectRobotsVo">
+        select id, code, name, group_id, manufacturer, production_date, area, status, hardware_status, task_status, battery,  created_at from robots
+    </sql>
+
+    <select id="selectRobotsList" parameterType="Robots" resultMap="RobotsResult">
+        <include refid="selectRobotsVo"/>
+        <where>  
+            <if test="groupId != null  and groupId != ''"> and group_id = #{groupId}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="hardwareStatus != null  and hardwareStatus != ''"> and hardware_status = #{hardwareStatus}</if>
+            <if test="taskStatus != null  and taskStatus != ''"> and task_status = #{taskStatus}</if>
+        </where>
+    </select>
+    
+    <select id="selectRobotsById" parameterType="String" resultMap="RobotsResult">
+        <include refid="selectRobotsVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertRobots" parameterType="Robots" useGeneratedKeys="true" keyProperty="id">
+        insert into robots
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="code != null and code != ''">code,</if>
+            <if test="name != null and name != ''">name,</if>
+            <if test="groupId != null and groupId != ''">group_id,</if>
+            <if test="manufacturer != null and manufacturer != ''">manufacturer,</if>
+            <if test="productionDate != null">production_date,</if>
+            <if test="area != null and area != ''">area,</if>
+            <if test="status != null">status,</if>
+            <if test="hardwareStatus != null">hardware_status,</if>
+            <if test="taskStatus != null">task_status,</if>
+            <if test="battery != null and battery != ''">battery,</if>
+            <if test="createdAt != null">created_at,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="code != null and code != ''">#{code},</if>
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="groupId != null and groupId != ''">#{groupId},</if>
+            <if test="manufacturer != null and manufacturer != ''">#{manufacturer},</if>
+            <if test="productionDate != null">#{productionDate},</if>
+            <if test="area != null and area != ''">#{area},</if>
+            <if test="status != null">#{status},</if>
+            <if test="hardwareStatus != null">#{hardwareStatus},</if>
+            <if test="taskStatus != null">#{taskStatus},</if>
+            <if test="battery != null and battery != ''">#{battery},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+         </trim>
+    </insert>
+
+    <update id="updateRobots" parameterType="Robots">
+        update robots
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="code != null and code != ''">code = #{code},</if>
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="groupId != null and groupId != ''">group_id = #{groupId},</if>
+            <if test="manufacturer != null and manufacturer != ''">manufacturer = #{manufacturer},</if>
+            <if test="productionDate != null">production_date = #{productionDate},</if>
+            <if test="area != null and area != ''">area = #{area},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="hardwareStatus != null">hardware_status = #{hardwareStatus},</if>
+            <if test="taskStatus != null">task_status = #{taskStatus},</if>
+            <if test="battery != null and battery != ''">battery = #{battery},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteRobotsById" parameterType="String">
+        delete from robots where id = #{id}
+    </delete>
+
+    <delete id="deleteRobotsByIds" parameterType="String">
+        delete from robots where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

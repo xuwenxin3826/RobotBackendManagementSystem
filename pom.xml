@@ -230,6 +230,7 @@
         <module>ruoyi-common</module>
         <module>taskmgt</module>
         <module>ruoyi-data</module>
+        <module>robots</module>
     </modules>
     <packaging>pom</packaging>
 
