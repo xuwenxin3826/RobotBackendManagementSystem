@@ -3,12 +3,15 @@ package com.ruoyi.robots.service.impl;
 import java.util.List;
 
 import com.ruoyi.robots.controller.dto.RobotsDto;
+import com.ruoyi.robots.exception.InsertNoAllowedException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.robots.mapper.RobotsMapper;
 import com.ruoyi.robots.domain.Robots;
 import com.ruoyi.robots.service.IRobotsService;
+
+import static com.ruoyi.robots.common.RobotsConstants.ROBOT_CODE_HAS_EXISTED;
 
 /**
  * 机器人基础信息Service业务层处理
@@ -55,6 +58,8 @@ public class RobotsServiceImpl implements IRobotsService
     @Override
     public int insertRobots(Robots robots)
     {
+        int count=robotsMapper.selectRobotsByCode(robots.getCode());
+        if(count>0)throw new InsertNoAllowedException(ROBOT_CODE_HAS_EXISTED);
         return robotsMapper.insertRobots(robots);
     }
 
@@ -66,6 +71,8 @@ public class RobotsServiceImpl implements IRobotsService
     @Override
     public int updateRobots(RobotsDto robotsDto)
     {
+        int count=robotsMapper.selectRobotsByCode(robotsDto.getCode());
+        if(count>0)throw new InsertNoAllowedException(ROBOT_CODE_HAS_EXISTED);
         Robots robots = new Robots();
         BeanUtils.copyProperties(robotsDto, robots);
         return robotsMapper.updateRobots(robots);

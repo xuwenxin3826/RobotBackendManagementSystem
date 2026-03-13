@@ -62,4 +62,7 @@ public interface RobotsMapper
 
     @Select("select count(id) from robots where group_id = #{groupId}")
     public Integer countByGroupId(String categoryId);
+
+    @Select("select count(id) from robots where group_id = #{groupId}")
+    int selectRobotsByCode(String code);
 }

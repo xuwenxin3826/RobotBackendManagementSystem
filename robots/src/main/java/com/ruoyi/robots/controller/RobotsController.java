@@ -26,7 +26,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
  * 机器人基础信息Controller
- * 
+ *
  * @author xiaocai
  * @date 2026-03-07
  */
@@ -108,7 +108,7 @@ public class RobotsController extends BaseController
     @ApiOperation("删除机器人基础信息")
     @PreAuthorize("@ss.hasPermi('robots:robots:remove')")
     @Log(title = "机器人基础信息", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{ids}")
+    @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable String[] ids)
     {
         return toAjax(robotsService.deleteRobotsByIds(ids));

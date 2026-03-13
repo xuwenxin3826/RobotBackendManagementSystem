@@ -22,6 +22,7 @@ public class Robots extends BaseEntity
     /** 机器人ID */
     private String id;
 
+
     /** 机器人编号（唯一标识） */
     @Excel(name = "机器人编号", readConverterExp = "唯=一标识")
     private String code;

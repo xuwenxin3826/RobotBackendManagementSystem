@@ -10,6 +10,8 @@ import java.util.Date;
 public class RobotsDto {
     /** 机器人ID */
     private String id;
+    /** 机器人编号 */
+    private String code;
     /** 机器人名称 */
     @Excel(name = "机器人名称")
     private String name;

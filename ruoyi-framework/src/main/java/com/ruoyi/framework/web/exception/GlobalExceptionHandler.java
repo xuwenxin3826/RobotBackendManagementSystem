@@ -3,6 +3,7 @@ package com.ruoyi.framework.web.exception;
 import javax.servlet.http.HttpServletRequest;
 
 import com.ruoyi.robots.exception.DeleteNoAllowedException;
+import com.ruoyi.robots.exception.InsertNoAllowedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
@@ -147,6 +148,12 @@ public class GlobalExceptionHandler
 
     @ExceptionHandler(DeleteNoAllowedException.class)
     public AjaxResult deleteNoAllowedException(DeleteNoAllowedException e)
+    {
+        log.error(e.getMessage());
+        return AjaxResult.error(e.getMessage());
+    }
+    @ExceptionHandler(InsertNoAllowedException.class)
+    public AjaxResult InsertNoAllowedException(InsertNoAllowedException e)
     {
         log.error(e.getMessage());
         return AjaxResult.error(e.getMessage());
