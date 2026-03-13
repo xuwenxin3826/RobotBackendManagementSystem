@@ -91,7 +91,7 @@ public class RobotWarningsController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('robots:warnings:query')")
     @GetMapping(value = "/{id}")
-    public AjaxResult getInfo(@PathVariable("id") String id)
+    public AjaxResult getInfo(@PathVariable("id") Long id)
     {
         return success(robotWarningsService.selectRobotWarningsById(id));
     }

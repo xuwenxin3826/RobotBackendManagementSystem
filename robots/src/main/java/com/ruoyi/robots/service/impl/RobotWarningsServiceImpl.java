@@ -3,9 +3,12 @@ package com.ruoyi.robots.service.impl;
 import java.util.Date;
 import java.util.List;
 
+import com.ruoyi.robots.common.RobotsConstants;
 import com.ruoyi.robots.controller.dto.RobotWarningsDto;
+import com.ruoyi.robots.event.RobotWarningEvent;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import com.ruoyi.robots.mapper.RobotWarningsMapper;
 import com.ruoyi.robots.domain.RobotWarnings;
@@ -23,6 +26,10 @@ public class RobotWarningsServiceImpl implements IRobotWarningsService
     @Autowired
     private RobotWarningsMapper robotWarningsMapper;
 
+    //事件发布
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     /**
      * 查询机器人状态预警
      * 
@@ -30,7 +37,7 @@ public class RobotWarningsServiceImpl implements IRobotWarningsService
      * @return 机器人状态预警
      */
     @Override
-    public RobotWarnings selectRobotWarningsById(String id)
+    public RobotWarnings selectRobotWarningsById(Long id)
     {
         return robotWarningsMapper.selectRobotWarningsById(id);
     }
@@ -56,6 +63,15 @@ public class RobotWarningsServiceImpl implements IRobotWarningsService
     @Override
     public int insertRobotWarnings(RobotWarnings robotWarnings)
     {
+        // 发布预警创建事件（状态为待处理）
+        eventPublisher.publishEvent(new RobotWarningEvent(
+                this,
+                robotWarnings.getRobotId(),
+                robotWarnings.getWarningType(),
+                robotWarnings.getWarningLevel(),
+                RobotsConstants.UNRESOLVED,
+                true
+        ));
         return robotWarningsMapper.insertRobotWarnings(robotWarnings);
     }
 
@@ -78,7 +94,7 @@ public class RobotWarningsServiceImpl implements IRobotWarningsService
      * @return 结果
      */
     @Override
-    public int deleteRobotWarningsByIds(String[] ids)
+    public int deleteRobotWarningsByIds(Long[] ids)
     {
         return robotWarningsMapper.deleteRobotWarningsByIds(ids);
     }
@@ -101,6 +117,19 @@ public class RobotWarningsServiceImpl implements IRobotWarningsService
         BeanUtils.copyProperties(robotWarningsDto, robotWarnings);
         robotWarnings.setResolveTime(new Date());
         robotWarnings.setStatus("1");
+
+        // 发布预警解决事件
+        RobotWarnings robotWarning = selectRobotWarningsById(robotWarningsDto.getId());
+        int unresolved = countUnresolvedByRobotId(robotWarning.getRobotId());
+        boolean hasRemaining = !(unresolved ==0);
+        eventPublisher.publishEvent(new RobotWarningEvent(
+                this,
+                robotWarning.getRobotId(),
+                robotWarning.getWarningType(),
+                robotWarning.getWarningLevel(),
+                RobotsConstants.RESOLVED,
+                hasRemaining
+        ));
         return robotWarningsMapper.updateRobotWarnings(robotWarnings);
     }
 
@@ -109,5 +138,13 @@ public class RobotWarningsServiceImpl implements IRobotWarningsService
         RobotWarnings robotWarnings = new RobotWarnings();
         robotWarnings.setStatus(status);
         return robotWarningsMapper.selectRobotWarningsList(robotWarnings);
+    }
+
+    @Override
+    public int countUnresolvedByRobotId(Long robotId) {
+        RobotWarnings query = new RobotWarnings();
+        query.setRobotId(robotId);
+        query.setStatus(RobotsConstants.UNRESOLVED);
+        return robotWarningsMapper.selectRobotWarningsList(query).size();
     }
 }

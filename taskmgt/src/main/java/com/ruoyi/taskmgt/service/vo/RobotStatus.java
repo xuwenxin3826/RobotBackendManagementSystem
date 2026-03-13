@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 public class RobotStatus {
     private Long robotId;
     private String robotName;
-    private String status; // online/offline/fault/low_battery
+    private String status;
 }

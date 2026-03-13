@@ -1,7 +1,10 @@
 package com.ruoyi.taskmgt.service.impl;
 
 import com.ruoyi.common.core.redis.RedisCache;
-import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.robots.common.RobotsConstants;
+import com.ruoyi.robots.event.RobotWarningEvent;
+import com.ruoyi.robots.service.IRobotWarningsService;
+import com.ruoyi.robots.service.IRobotsService;
 import com.ruoyi.taskmgt.common.constants.TaskLogEventType;
 import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.TaskRepository;
@@ -33,9 +36,11 @@ public class TaskTriggerService {
     @Autowired
     private RedisCache redisUtil;
 
-    // 机器人服务接口（待实现）
-    // @Autowired
-    // private IRobotService robotService;
+    @Autowired
+    private IRobotsService robotService;
+
+    @Autowired
+    private IRobotWarningsService robotWarningsService;
 
     /**
      * 每分钟执行一次触发检查
@@ -67,7 +72,7 @@ public class TaskTriggerService {
     private void checkBatteryTasks() {
         List<Task> tasks = taskRepository.getTasks(Task.NOTSTART, null, null, null, null, 2, null, null);
         for (Task task : tasks) {
-            // Integer battery = robotService.getBatteryLevel(task.getRobotId());
+            //Integer battery = robotService.selectRobotsById(task.getRobotId()).getBattery();
             Integer battery = getMockBattery(task.getRobotId());
             if (battery != null && battery >= task.getBatteryThreshold()) {
                 triggerTask(task);
@@ -81,11 +86,11 @@ public class TaskTriggerService {
     private void checkIdleTasks() {
         List<Task> tasks = taskRepository.getTasks(Task.NOTSTART, null, null, null, null, 3, null, null);
         for (Task task : tasks) {
-            // String status = robotService.getRobotStatus(task.getRobotId());
+            //String taskStatus = robotService.selectRobotsById(task.getRobotId()).getTaskStatus();
             // Date idleSince = robotService.getIdleSince(task.getRobotId());
-            String status = getMockRobotStatus(task.getRobotId());
+            String taskStatus = getMockRobotStatus(task.getRobotId());
             Date idleSince = getMockIdleSince(task.getRobotId());
-            if ("idle".equals(status) && idleSince != null) {
+            if ("idle".equals(taskStatus) && idleSince != null) {
                 long idleMinutes = (System.currentTimeMillis() - idleSince.getTime()) / (60 * 1000);
                 if (idleMinutes >= task.getIdleTime()) {
                     triggerTask(task);
@@ -126,72 +131,6 @@ public class TaskTriggerService {
         taskLogService.record(task.getId(), null, TaskLogEventType.TASK_PENDING,
                 "任务达到触发条件，进入准备队列", "system");
         log.info("任务 {} 已触发进入准备队列", task.getId());
-    }
-
-    // 机器人状态变更处理
-    public void handleRobotStatusChange(Long robotId, String newStatus) {
-        log.info("收到机器人状态变更事件：robotId={}, newStatus={}", robotId, newStatus);
-
-        // 处理非组任务
-        List<Task> tasks = taskRepository.getTasks(null, 0, null, robotId, null, null, null, null);
-        for (Task task : tasks) {
-            updateTaskRisk(task, newStatus);
-        }
-
-        // 处理组任务：获取机器人所在组
-        Long groupId = getMockRobotGroupId(robotId); // 待替换为 robotService.getRobotGroupId(robotId)
-        if (groupId != null) {
-            // 获取该组下所有组任务
-            List<Task> groupTasks = taskRepository.getTasks(null, 1, null, null, groupId, null, null, null);
-            // 获取该组所有机器人的状态
-            List<Long> robotIds = getMockRobotIdsByGroupId(groupId); // 待替换
-            boolean hasAbnormal = false;
-            for (Long rid : robotIds) {
-                String status = getMockRobotStatus(rid);
-                if ("offline".equals(status) || "fault".equals(status) || "low_battery".equals(status)) {
-                    hasAbnormal = true;
-                    break;
-                }
-            }
-            for (Task task : groupTasks) {
-                if (hasAbnormal) {
-                    int riskLevel = (task.getStatus() == Task.EXECUTING) ? 2 : 1;
-                    task.setRiskLevel(riskLevel);
-                    taskLogService.record(task.getId(), null, TaskLogEventType.ROBOT_STATUS_CHANGE,
-                            String.format("组内机器人状态异常，任务标记为%s", riskLevel == 2 ? "高风险" : "风险"), "system");
-                } else {
-                    task.setRiskLevel(0);
-                    taskLogService.record(task.getId(), null, TaskLogEventType.ROBOT_STATUS_CHANGE,
-                            "组内机器人状态恢复正常，任务风险清除", "system");
-                }
-                task.setUpdateBy("system");
-                List<String> redisKeys = taskRepository.update(task);
-                if (redisKeys != null && !redisKeys.isEmpty()) {
-                    redisUtil.deleteObject(redisKeys);
-                }
-            }
-        }
-    }
-
-    private void updateTaskRisk(Task task, String newStatus) {
-        if (Objects.equals(task.getStatus(), Task.DISABLED) || Objects.equals(task.getStatus(), Task.TERMINATED) ||
-                Objects.equals(task.getStatus(), Task.FINISHED) || Objects.equals(task.getStatus(), Task.DELETED)) {
-            return;
-        }
-        if ("offline".equals(newStatus) || "fault".equals(newStatus) || "low_battery".equals(newStatus)) {
-            int riskLevel = (Objects.equals(task.getStatus(), Task.EXECUTING)) ? 2 : 1;
-            task.setRiskLevel(riskLevel);
-            taskLogService.record(task.getId(), null, TaskLogEventType.ROBOT_STATUS_CHANGE,
-                    String.format("机器人状态变更为%s，任务标记为%s", newStatus,
-                            riskLevel == 2 ? "高风险" : "风险"), "system");
-        } else if ("online".equals(newStatus)) {
-            // 机器人恢复正常，不清除风险，等待管理员手动解决
-        }
-        task.setUpdateBy("system");
-        List<String> redisKeys = taskRepository.update(task);
-        if (redisKeys != null && !redisKeys.isEmpty()) {
-            redisUtil.deleteObject(redisKeys);
-        }
     }
 
     //任务开始触发
@@ -285,6 +224,97 @@ public class TaskTriggerService {
         }
         taskLogService.record(step.getTaskId(), step.getId(), TaskLogEventType.STEP_START,
                 "步骤 " + step.getStepName() + " 开始执行", "system");
+    }
+
+    /**
+     * 处理机器人预警事件，更新相关任务的风险等级
+     */
+    public void handleRobotWarning(RobotWarningEvent event) {
+        Long robotId = event.getRobotId();
+        String warningStatus = event.getStatus();       // 0-待处理，1-已解决
+        boolean isResolved = RobotsConstants.RESOLVED.equals(warningStatus);
+        //处理非组任务
+        List<Task> tasks = taskRepository.getTasks(null, 0, null, robotId, null, null, null, null);
+        for (Task task : tasks) {
+            updateTaskRiskByWarning(task, robotId, isResolved);
+        }
+
+        //处理组任务
+        Long groupId = getMockRobotGroupId(robotId); // 待替换
+        //Long groupId = robotService.selectRobotsById(robotId).getGroupId();
+        if (groupId != null) {
+            // 获取该组下所有组任务
+            List<Task> groupTasks = taskRepository.getTasks(null, 1, null, null, groupId, null, null, null);
+            // 获取该组所有机器人的ID
+            List<Long> robotIds = getMockRobotIdsByGroupId(groupId); // 待替换
+//          List<Long> robotIds = robotService.selectRobotsList(groupId).stream().map(robot -> {return robot.getId();}).collect(Collectors.toList());
+            boolean hasUnresolvedWarning = false;
+            if (robotWarningsService != null) {
+                for (Long rid : robotIds) {
+                    if (robotWarningsService.countUnresolvedByRobotId(rid) > 0) {
+                        hasUnresolvedWarning = true;
+                        break;
+                    }
+                }
+            } else {
+                hasUnresolvedWarning = !isResolved || (isResolved && event.isHasRemaining());
+            }
+
+            for (Task task : groupTasks) {
+                if (hasUnresolvedWarning) {
+                    int riskLevel = (Objects.equals(task.getStatus(), Task.EXECUTING)) ? 2 : 1;
+                    task.setRiskLevel(riskLevel);
+                    taskLogService.record(task.getId(), null, TaskLogEventType.ROBOT_STATUS_CHANGE,
+                            String.format("组内机器人存在未解决预警，任务标记为%s", riskLevel == 2 ? "高风险" : "风险"), "system");
+                } else {
+                    task.setRiskLevel(0);
+                    taskLogService.record(task.getId(), null, TaskLogEventType.ROBOT_STATUS_CHANGE,
+                            "组内机器人预警已全部解决，任务风险清除", "system");
+                }
+                task.setUpdateBy("system");
+                List<String> redisKeys = taskRepository.update(task);
+                if (redisKeys != null && !redisKeys.isEmpty()) {
+                    redisUtil.deleteObject(redisKeys);
+                }
+            }
+        }
+    }
+
+    /**
+     * 根据预警情况更新单个非组任务的风险等级
+     */
+    private void updateTaskRiskByWarning(Task task, Long robotId, boolean isResolved) {
+        if (Objects.equals(task.getStatus(), Task.DISABLED) ||
+                Objects.equals(task.getStatus(), Task.TERMINATED) ||
+                Objects.equals(task.getStatus(), Task.FINISHED) ||
+                Objects.equals(task.getStatus(), Task.DELETED)) {
+            return;
+        }
+
+        boolean hasUnresolvedWarning = false;
+        if (robotWarningsService != null) {
+            hasUnresolvedWarning = robotWarningsService.countUnresolvedByRobotId(robotId) > 0;
+        } else {
+            // 简单模式：根据事件状态判断
+            hasUnresolvedWarning = !isResolved;
+        }
+
+        if (hasUnresolvedWarning) {
+            int riskLevel = (Objects.equals(task.getStatus(), Task.EXECUTING)) ? 2 : 1;
+            task.setRiskLevel(riskLevel);
+            taskLogService.record(task.getId(), null, TaskLogEventType.ROBOT_STATUS_CHANGE,
+                    String.format("机器人存在未解决预警，任务标记为%s", riskLevel == 2 ? "高风险" : "风险"), "system");
+        } else {
+            task.setRiskLevel(0);
+            taskLogService.record(task.getId(), null, TaskLogEventType.ROBOT_STATUS_CHANGE,
+                    "机器人预警已全部解决，任务风险清除", "system");
+        }
+
+        task.setUpdateBy("system");
+        List<String> redisKeys = taskRepository.update(task);
+        if (redisKeys != null && !redisKeys.isEmpty()) {
+            redisUtil.deleteObject(redisKeys);
+        }
     }
 
     // 模拟方法（待替换为真实机器人服务调用）
