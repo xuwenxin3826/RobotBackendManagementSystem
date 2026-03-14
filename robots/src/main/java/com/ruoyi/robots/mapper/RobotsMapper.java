@@ -1,7 +1,8 @@
 package com.ruoyi.robots.mapper;
 
 import java.util.List;
-import com.ruoyi.robots.domain.Robots;
+
+import com.ruoyi.robots.domain.Robot;
 import org.apache.ibatis.annotations.Select;
 
 /**
@@ -18,31 +19,31 @@ public interface RobotsMapper
      * @param id 机器人基础信息主键
      * @return 机器人基础信息
      */
-    public Robots selectRobotsById(String id);
+    public Robot selectRobotsById(String id);
 
     /**
      * 查询机器人基础信息列表
      * 
-     * @param robots 机器人基础信息
+     * @param robot 机器人基础信息
      * @return 机器人基础信息集合
      */
-    public List<Robots> selectRobotsList(Robots robots);
+    public List<Robot> selectRobotsList(Robot robot);
 
     /**
      * 新增机器人基础信息
      * 
-     * @param robots 机器人基础信息
+     * @param robot 机器人基础信息
      * @return 结果
      */
-    public int insertRobots(Robots robots);
+    public int insertRobots(Robot robot);
 
     /**
      * 修改机器人基础信息
      * 
-     * @param robots 机器人基础信息
+     * @param robot 机器人基础信息
      * @return 结果
      */
-    public int updateRobots(Robots robots);
+    public int updateRobots(Robot robot);
 
     /**
      * 删除机器人基础信息

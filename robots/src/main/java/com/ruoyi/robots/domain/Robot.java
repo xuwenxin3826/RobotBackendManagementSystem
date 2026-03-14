@@ -15,12 +15,12 @@ import com.ruoyi.common.core.domain.BaseEntity;
  * @date 2026-03-07
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)//仅序列化非空字段
-public class Robots extends BaseEntity
+public class Robot extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
     /** 机器人ID */
-    private String id;
+    private Long id;
 
 
     /** 机器人编号（唯一标识） */
@@ -73,12 +73,12 @@ public class Robots extends BaseEntity
     private Date createdAt;
 
 
-    public void setId(String id) 
+    public void setId(Long id)
     {
         this.id = id;
     }
 
-    public String getId() 
+    public Long getId()
     {
         return id;
     }

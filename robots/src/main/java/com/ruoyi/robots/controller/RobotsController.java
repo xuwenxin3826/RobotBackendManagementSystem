@@ -4,6 +4,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ruoyi.robots.controller.dto.RobotsDto;
+import com.ruoyi.robots.domain.Robot;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,6 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.robots.domain.Robots;
 import com.ruoyi.robots.service.IRobotsService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -45,10 +45,10 @@ public class RobotsController extends BaseController
     @PreAuthorize("@ss.hasPermi('robots:robots:list')")
     @GetMapping("/list")
     @ApiOperation("查询机器人列表")
-    public TableDataInfo list(Robots robots)
+    public TableDataInfo list(Robot robot)
     {
         startPage();
-        List<Robots> list = robotsService.selectRobotsList(robots);
+        List<Robot> list = robotsService.selectRobotsList(robot);
         return getDataTable(list);
     }
 
@@ -58,10 +58,10 @@ public class RobotsController extends BaseController
     @PreAuthorize("@ss.hasPermi('robots:robots:export')")
     @Log(title = "机器人基础信息", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Robots robots)
+    public void export(HttpServletResponse response, Robot robot)
     {
-        List<Robots> list = robotsService.selectRobotsList(robots);
-        ExcelUtil<Robots> util = new ExcelUtil<Robots>(Robots.class);
+        List<Robot> list = robotsService.selectRobotsList(robot);
+        ExcelUtil<Robot> util = new ExcelUtil<Robot>(Robot.class);
         util.exportExcel(response, list, "机器人基础信息数据");
     }
 
@@ -85,9 +85,9 @@ public class RobotsController extends BaseController
     @PreAuthorize("@ss.hasPermi('robots:robots:add')")
     @Log(title = "机器人基础信息", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody Robots robots)
+    public AjaxResult add(@RequestBody Robot robot)
     {
-        return toAjax(robotsService.insertRobots(robots));
+        return toAjax(robotsService.insertRobots(robot));
     }
 
     /**

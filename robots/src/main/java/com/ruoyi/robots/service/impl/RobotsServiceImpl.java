@@ -3,12 +3,12 @@ package com.ruoyi.robots.service.impl;
 import java.util.List;
 
 import com.ruoyi.robots.controller.dto.RobotsDto;
+import com.ruoyi.robots.domain.Robot;
 import com.ruoyi.robots.exception.InsertNoAllowedException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.robots.mapper.RobotsMapper;
-import com.ruoyi.robots.domain.Robots;
 import com.ruoyi.robots.service.IRobotsService;
 
 import static com.ruoyi.robots.common.RobotsConstants.ROBOT_CODE_HAS_EXISTED;
@@ -32,7 +32,7 @@ public class RobotsServiceImpl implements IRobotsService
      * @return 机器人基础信息
      */
     @Override
-    public Robots selectRobotsById(String id)
+    public Robot selectRobotsById(String id)
     {
         return robotsMapper.selectRobotsById(id);
     }
@@ -40,27 +40,27 @@ public class RobotsServiceImpl implements IRobotsService
     /**
      * 查询机器人基础信息列表
      * 
-     * @param robots 机器人基础信息
+     * @param robot 机器人基础信息
      * @return 机器人基础信息
      */
     @Override
-    public List<Robots> selectRobotsList(Robots robots)
+    public List<Robot> selectRobotsList(Robot robot)
     {
-        return robotsMapper.selectRobotsList(robots);
+        return robotsMapper.selectRobotsList(robot);
     }
 
     /**
      * 新增机器人基础信息
      * 
-     * @param robots 机器人基础信息
+     * @param robot 机器人基础信息
      * @return 结果
      */
     @Override
-    public int insertRobots(Robots robots)
+    public int insertRobots(Robot robot)
     {
-        int count=robotsMapper.selectRobotsByCode(robots.getCode());
+        int count=robotsMapper.selectRobotsByCode(robot.getCode());
         if(count>0)throw new InsertNoAllowedException(ROBOT_CODE_HAS_EXISTED);
-        return robotsMapper.insertRobots(robots);
+        return robotsMapper.insertRobots(robot);
     }
 
     /**
@@ -73,9 +73,9 @@ public class RobotsServiceImpl implements IRobotsService
     {
         int count=robotsMapper.selectRobotsByCode(robotsDto.getCode());
         if(count>0)throw new InsertNoAllowedException(ROBOT_CODE_HAS_EXISTED);
-        Robots robots = new Robots();
-        BeanUtils.copyProperties(robotsDto, robots);
-        return robotsMapper.updateRobots(robots);
+        Robot robot = new Robot();
+        BeanUtils.copyProperties(robotsDto, robot);
+        return robotsMapper.updateRobots(robot);
     }
 
     /**
