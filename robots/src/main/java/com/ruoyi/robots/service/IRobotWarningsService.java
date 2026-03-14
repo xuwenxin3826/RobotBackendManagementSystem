@@ -19,7 +19,7 @@ public interface IRobotWarningsService
      * @param id 机器人状态预警主键
      * @return 机器人状态预警
      */
-    public RobotWarnings selectRobotWarningsById(String id);
+    public RobotWarnings selectRobotWarningsById(Long id);
 
     /**
      * 查询机器人状态预警列表
@@ -51,7 +51,7 @@ public interface IRobotWarningsService
      * @param ids 需要删除的机器人状态预警主键集合
      * @return 结果
      */
-    public int deleteRobotWarningsByIds(String[] ids);
+    public int deleteRobotWarningsByIds(Long[] ids);
 
     /**
      * 删除机器人状态预警信息
@@ -64,4 +64,6 @@ public interface IRobotWarningsService
     int dealRobotWarnings(RobotWarningsDto robotWarningsDto);
 
     public List<RobotWarnings> selectRobotWarningsListByStatus(String status);
+
+    int countUnresolvedByRobotId(Long robotId);
 }

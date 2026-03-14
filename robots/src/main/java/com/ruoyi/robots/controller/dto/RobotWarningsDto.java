@@ -1,12 +1,11 @@
 package com.ruoyi.robots.controller.dto;
 
-import com.ruoyi.common.annotation.Excel;
 import lombok.Data;
 
 @Data
 public class RobotWarningsDto {
     /** 预警ID */
-    private String id;
+    private Long id;
 
 
     /** 处理人 */

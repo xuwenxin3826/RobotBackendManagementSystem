@@ -1,11 +1,14 @@
 package com.ruoyi.taskmgt.service.impl;
-
 import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.robots.domain.RobotWarnings;
+import com.ruoyi.robots.domain.Robots;
+import com.ruoyi.robots.service.IRobotWarningsService;
+import com.ruoyi.robots.service.IRobotsService;
 import com.ruoyi.taskmgt.common.constants.TaskLogEventType;
 import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.TaskRepository;
@@ -40,6 +43,8 @@ public class TaskServiceImpl implements ITaskService {
     private final StepReuseService stepReuseService;
     private final StepRepository stepRepository;
     private final TaskLogReuseService taskLogService;
+    private final IRobotsService robotsService;
+    private final IRobotWarningsService robotWarningsService;
 
     /**
      * @param task 即将新增的任务
@@ -129,16 +134,18 @@ public class TaskServiceImpl implements ITaskService {
         List<Task> tasks = this.taskRepository.getTasks(status, isGroupTask, name, robotId, robotGroupId, taskType, riskLevel, templateId);
         if(StringUtils.isNull(isGroupTask)){
             if (StringUtils.isNotNull(robotId)){
-                /*RobotRepository robotRepository;
-                robotGroupId=robotRepository.findById(robotId).getRobotGroupId();*/
+//                Robots robot=this.robotsService.selectRobotsById(robotId);
+//                robotGroupId= robot.getGroupId();
                 tasks.addAll(this.taskRepository.getTasks(status,null,name, null, robotGroupId, taskType, riskLevel, templateId));
             }
             else if(StringUtils.isNotNull(robotGroupId)){
                 List<Long> robotIds = new ArrayList<>();
-                /*
-                RobotRepository robotRepository;
-                robotIds = robotRepository.getRobotIdsByRobotGroupId(robotId);
-                * */
+//                Robots robot=new Robots();
+//                robot.setGroupId(robotGroupId);
+//                List<Robots> robots=this.robotsService.selectRobotsList(robot);
+//                for(Robots bot:robots){
+//                    robotIds.add(bot.getId());
+//                }
                 tasks.addAll(this.taskRepository.getTasksByRobotIds(status,null,name, robotIds, null, taskType, riskLevel, templateId));
             }
         }
@@ -149,6 +156,14 @@ public class TaskServiceImpl implements ITaskService {
                         String templateName = this.templateRepository.getTemplateNameById(task.getTemplateId());
                         taskVo.setTemplateName(templateName);
                     }
+//                    if (StringUtils.isNotNull(task.getRobotId())){
+//                        String robotName = this.robotsService.selectRobotsById(task.getRobotId()).getName();
+//                        taskVo.setRobotName(robotName);
+//                    }
+//                    if (StringUtils.isNotNull(task.getRobotGroupId())) {
+//                        String robotGroupName = this.robotGroupsService.selectRobotGroupsById(task.getRobotGroupId()).getName();
+//                        taskVo.setRobotGroupName(robotGroupName);
+//                    }
                     log.info("TaskVo: {}", taskVo);
                     return taskVo;
                 })
@@ -245,13 +260,13 @@ public class TaskServiceImpl implements ITaskService {
         }
         else{
             //组任务需确认该组所有的机器人都没有正在执行的任务
-            /*
-            RobotRepository robotRepository;
-            List<Robot> robots = robotRepository.findByRobotGroupId(task.getRobotGroupId());
-            for(Robot robot : robots){
-                tasks.addAll(this.taskRepository.findByRobotIdAndStatus(robot.getId(),Task.EXECUTING));
-            }
-            * */
+//            Robots robot = new Robots();
+//            robot.setGroupId(task.getRobotGroupId());
+//            List<Robots> robots = this.robotsService.selectRobotsList(robot);
+//            for(Robots bot : robots){
+//                tasks.addAll(this.taskRepository.findByRobotIdAndStatus(bot.getId(),Task.EXECUTING));
+//            }
+
         }
         if (StringUtils.isEmpty(tasks)){
             redisKeys = this.updateTaskStatus(task,Task.EXECUTING);
@@ -332,13 +347,15 @@ public class TaskServiceImpl implements ITaskService {
             throw new TaskmgtException(ReturnNo.STATENOTALLOW,args,this.messageSourceAccessor.getMessage(ReturnNo.STATENOTALLOW.getMessage()));
         }
 
-        // 检查机器人状态
         boolean allNormal;
         if (task.getIsGroupTask() == 0) {
-            allNormal = checkRobotNormal(task.getRobotId());
+            allNormal = this.robotWarningsService.countUnresolvedByRobotId(task.getRobotId()) == 0;
         } else {
-            List<Long> robotIds = getMockRobotIdsByGroupId(task.getRobotGroupId()); // 待替换
-            allNormal = robotIds.stream().allMatch(this::checkRobotNormal);
+            //List<Robots>robots = this.robotsService.selectRobotsList(new Robots().setGroupId(task.getRobotGroupId()));
+            //List<Long> robotIds = robots.stream().map(robot -> {return robot.getId();}).collect(Collectors.toList());
+            List<Long>robotIds = this.getMockRobotIdsByGroupId(task.getRobotGroupId());//待替换
+            allNormal = robotIds.stream()
+                    .allMatch(rid -> robotWarningsService.countUnresolvedByRobotId(rid) == 0);
         }
 
         if (!allNormal) {
@@ -363,45 +380,62 @@ public class TaskServiceImpl implements ITaskService {
     }
 
     private TaskAbnormalVo buildAbnormalVo(Task task) {
-        TaskAbnormalVo vo =  CloneFactory.copy(new TaskAbnormalVo(), task);
+        TaskAbnormalVo vo = CloneFactory.copy(new TaskAbnormalVo(), task);
         if (task.getTemplateId() != null) {
             vo.setTemplateName(templateRepository.getTemplateNameById(task.getTemplateId()));
         }
-        // 填充机器人状态摘要
+
         if (task.getIsGroupTask() == 0) {
-            String robotStatus = getMockRobotStatus(task.getRobotId());
-            vo.setRobotStatusSummary(robotStatus);
-            vo.setRobotStatuses(List.of(new RobotStatus(task.getRobotId(), getMockRobotName(task.getRobotId()), robotStatus)));
-        } else {
-            List<RobotStatus> robotStatuses = getMockRobotsByGroupId(task.getRobotGroupId());
-            String summary = "normal";
-            for (RobotStatus rs : robotStatuses) {
-                if ("offline".equals(rs.getStatus()) || "fault".equals(rs.getStatus())) {
-                    summary = "abnormal";
-                    break;
-                } else if ("low_battery".equals(rs.getStatus()) && "normal".equals(summary)) {
-                    summary = "low_battery";
-                }
+            // 单个机器人
+            RobotWarnings robotWarning = new RobotWarnings();
+            robotWarning.setRobotId(task.getRobotId());
+            List<RobotWarnings> warnings = robotWarningsService.selectRobotWarningsList(robotWarning);
+            RobotStatus rs = new RobotStatus();
+            rs.setRobotId(task.getRobotId());
+            //rs.setRobotName(robotsService.selectRobotsById(task.getRobotId()).getRobotName(task.getRobotId()));
+
+            if (warnings.isEmpty()) {
+                rs.setStatus("normal");
+                vo.setRobotStatusSummary("正常");
+            } else {
+                // 取第一个预警类型作为摘要（可根据业务调整）
+                String summary = warnings.get(0).getWarningType();
+                rs.setStatus(summary);
+                vo.setRobotStatusSummary(summary+"预警级别：" + warnings.get(0).getWarningLevel());
             }
-            vo.setRobotStatusSummary(summary);
+            vo.setRobotStatuses(List.of(rs));
+        } else {
+            // 组任务
+            Robots robot = new Robots();
+            //robot.setGroupId(task.getRobotGroupId());
+            List<Robots> robots = robotsService.selectRobotsList(robot);
+            List<RobotStatus> robotStatuses = new ArrayList<>();
+            boolean groupHasWarning = false;
+
+            for (Robots bot : robots) {
+                RobotWarnings robotWarning = new RobotWarnings();
+                //robotWarning.setRobotId(bot.getId());
+                List<RobotWarnings> warnings = robotWarningsService.selectRobotWarningsList(robotWarning);
+                RobotStatus rs = new RobotStatus();
+                //rs.setRobotId(bot.getId());
+                rs.setRobotName(bot.getName());
+
+                if (warnings.isEmpty()) {
+                    rs.setStatus("normal");
+                } else {
+                    groupHasWarning = true;
+                    String summary = warnings.get(0).getWarningType();
+                    rs.setStatus(summary);
+                }
+                robotStatuses.add(rs);
+            }
+
+            // 组摘要：如果组内有任何预警则显示“组内异常”，否则“正常”
+            vo.setRobotStatusSummary(groupHasWarning ? "组内异常" : "正常");
             vo.setRobotStatuses(robotStatuses);
         }
         return vo;
     }
 
-    // ==================== 模拟方法 ====================
-    private boolean checkRobotNormal(Long robotId) {
-        String status = getMockRobotStatus(robotId);
-        return "online".equals(status) && !"low_battery".equals(status);
-    }
-
-    private String getMockRobotStatus(Long robotId) { return "online"; }
-    private String getMockRobotName(Long robotId) { return "机器人" + robotId; }
     private List<Long> getMockRobotIdsByGroupId(Long groupId) { return List.of(1L, 2L); }
-    private List<RobotStatus> getMockRobotsByGroupId(Long groupId) {
-        return List.of(
-                new RobotStatus(1L, "机器人1", "online"),
-                new RobotStatus(2L, "机器人2", "online")
-        );
-    }
 }

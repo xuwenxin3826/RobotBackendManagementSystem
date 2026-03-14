@@ -35,7 +35,7 @@ public class StepController extends BaseController {
     public AjaxResult createTaskSteps(@PathVariable Long taskId,@Validated(value = NewGroup.class) @RequestBody List<TaskStepDto> dtos)
     {
         List<TaskStep> steps = dtos.stream()
-                .map(po -> CloneFactory.copy(new TaskStep(), po))
+                .map(dto -> CloneFactory.copy(new TaskStep(), dto))
                 .collect(Collectors.toList());
         List<TaskStepVo> result = this.stepService.createSteps(taskId,steps);
         return success(result);

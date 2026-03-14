@@ -18,11 +18,11 @@ public class RobotWarnings extends BaseEntity
     private static final long serialVersionUID = 1L;
 
     /** 预警ID */
-    private String id;
+    private Long id;
 
     /** 关联机器人ID（逻辑外键） */
     @Excel(name = "关联机器人ID", readConverterExp = "逻=辑外键")
-    private String robotId;
+    private Long robotId;
 
     /** 预警类型（0-低电量，1-硬件故障，2-硬件异常，3-离线） */
     @Excel(name = "预警类型", readConverterExp = "0=-低电量，1-硬件故障，2-硬件异常，3-离线")
@@ -58,22 +58,22 @@ public class RobotWarnings extends BaseEntity
     @Excel(name = "预警创建时间", width = 30, dateFormat = "yyyy-MM-dd")
     private Date createdAt;
 
-    public void setId(String id) 
+    public void setId(Long id)
     {
         this.id = id;
     }
 
-    public String getId() 
+    public Long getId()
     {
         return id;
     }
 
-    public void setRobotId(String robotId) 
+    public void setRobotId(Long robotId)
     {
         this.robotId = robotId;
     }
 
-    public String getRobotId() 
+    public Long getRobotId()
     {
         return robotId;
     }
