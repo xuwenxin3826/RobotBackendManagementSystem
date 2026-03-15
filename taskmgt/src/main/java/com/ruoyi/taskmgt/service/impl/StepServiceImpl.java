@@ -4,7 +4,6 @@ import com.ruoyi.common.core.redis.RedisCache;
 import com.ruoyi.common.enums.ReturnNo;
 import com.ruoyi.common.exception.task.TaskmgtException;
 import com.ruoyi.common.utils.CloneFactory;
-import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.taskmgt.common.constants.TaskLogEventType;
 import com.ruoyi.taskmgt.domain.StepRepository;
 import com.ruoyi.taskmgt.domain.TaskRepository;
@@ -50,7 +49,7 @@ public class StepServiceImpl implements IStepService {
                     step.setStatus(TaskStep.NOTSTART);
                     return this.stepRepository.insert(step);
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         return savedSteps.stream()
                 .map(step -> {

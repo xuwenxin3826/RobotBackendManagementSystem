@@ -62,7 +62,7 @@ public class Robot extends BaseEntity
 
     /** 当前电量（0-100） */
     @Excel(name = "当前电量", readConverterExp = "0=-100")
-    private String battery;
+    private Integer battery;
 
 
 
@@ -173,12 +173,12 @@ public class Robot extends BaseEntity
         return taskStatus;
     }
 
-    public void setBattery(String battery) 
+    public void setBattery(Integer battery)
     {
         this.battery = battery;
     }
 
-    public String getBattery() 
+    public Integer getBattery()
     {
         return battery;
     }

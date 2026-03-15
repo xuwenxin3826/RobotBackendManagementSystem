@@ -185,6 +185,8 @@ public class TaskServiceImpl implements ITaskService {
         });
         TaskVo taskVo = CloneFactory.copy(new TaskVo(),task);
         if(StringUtils.isNotNull(task.getTemplateId()))taskVo.setTemplateName(this.templateRepository.getTemplateNameById(task.getTemplateId()));
+        if (StringUtils.isNotNull(task.getRobotId())){taskVo.setRobotName(this.robotService.selectRobotsById(task.getRobotId()).getName());}
+        if (StringUtils.isNotNull(task.getRobotGroupId())) {taskVo.setRobotGroupName(this.robotGroupsService.selectRobotGroupsById(task.getRobotGroupId()).getName());}
         return taskVo;
     }
 
@@ -262,12 +264,12 @@ public class TaskServiceImpl implements ITaskService {
         }
         else{
             //组任务需确认该组所有的机器人都没有正在执行的任务
-//            Robots robot = new Robots();
-//            robot.setGroupId(task.getRobotGroupId());
-//            List<Robots> robots = this.robotsService.selectRobotsList(robot);
-//            for(Robots bot : robots){
-//                tasks.addAll(this.taskRepository.findByRobotIdAndStatus(bot.getId(),Task.EXECUTING));
-//            }
+            Robot robot = new Robot();
+            robot.setGroupId(task.getRobotGroupId());
+            List<Robot> robots = this.robotService.selectRobotsList(robot);
+            for(Robot bot : robots){
+                tasks.addAll(this.taskRepository.findByRobotIdAndStatus(bot.getId(),Task.EXECUTING));
+            }
 
         }
         if (StringUtils.isEmpty(tasks)){
@@ -357,7 +359,6 @@ public class TaskServiceImpl implements ITaskService {
             robot.setGroupId(task.getRobotGroupId());
             List<Robot>robots = this.robotService.selectRobotsList(robot);
             List<Long> robotIds = robots.stream().map(Robot::getId).toList();
-//            List<Long>robotIds = this.getMockRobotIdsByGroupId(task.getRobotGroupId());//待替换
             allNormal = robotIds.stream()
                     .allMatch(rid -> robotWarningsService.countUnresolvedByRobotId(rid) == 0);
         }
@@ -441,5 +442,5 @@ public class TaskServiceImpl implements ITaskService {
         return vo;
     }
 
-    //private List<Long> getMockRobotIdsByGroupId(Long groupId) { return List.of(1L, 2L); }
+    private List<Long> getMockRobotIdsByGroupId(Long groupId) { return List.of(1L, 2L); }
 }
