@@ -3,7 +3,7 @@ package com.ruoyi.robots.service;
 import java.util.List;
 
 import com.ruoyi.robots.controller.dto.RobotsDto;
-import com.ruoyi.robots.domain.Robots;
+import com.ruoyi.robots.domain.Robot;
 
 /**
  * 机器人基础信息Service接口
@@ -19,23 +19,23 @@ public interface IRobotsService
      * @param id 机器人基础信息主键
      * @return 机器人基础信息
      */
-    public Robots selectRobotsById(String id);
+    public Robot selectRobotsById(String id);
 
     /**
      * 查询机器人基础信息列表
      * 
-     * @param robots 机器人基础信息
+     * @param robot 机器人基础信息
      * @return 机器人基础信息集合
      */
-    public List<Robots> selectRobotsList(Robots robots);
+    public List<Robot> selectRobotsList(Robot robot);
 
     /**
      * 新增机器人基础信息
      * 
-     * @param robots 机器人基础信息
+     * @param robot 机器人基础信息
      * @return 结果
      */
-    public int insertRobots(Robots robots);
+    public int insertRobots(Robot robot);
 
     /**
      * 修改机器人基础信息

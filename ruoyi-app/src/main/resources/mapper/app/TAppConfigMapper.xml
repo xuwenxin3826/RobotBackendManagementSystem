@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.app.mapper.TAppConfigMapper">
+    
+    <resultMap type="TAppConfig" id="TAppConfigResult">
+        <result property="id"    column="id"    />
+        <result property="appId"    column="app_id"    />
+        <result property="configKey"    column="config_key"    />
+        <result property="configValue"    column="config_value"    />
+        <result property="configType"    column="config_type"    />
+        <result property="configLabel"    column="config_label"    />
+        <result property="configDesc"    column="config_desc"    />
+        <result property="sort"    column="sort"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectTAppConfigVo">
+        select id, app_id, config_key, config_value, config_type, config_label, config_desc, sort, create_time, update_time from t_app_config
+    </sql>
+
+    <select id="selectTAppConfigList" parameterType="TAppConfig" resultMap="TAppConfigResult">
+        <include refid="selectTAppConfigVo"/>
+        <where>  
+            <if test="appId != null  and appId != ''"> and app_id = #{appId}</if>
+            <if test="configKey != null  and configKey != ''"> and config_key = #{configKey}</if>
+            <if test="configValue != null  and configValue != ''"> and config_value = #{configValue}</if>
+            <if test="configType != null "> and config_type = #{configType}</if>
+            <if test="configLabel != null  and configLabel != ''"> and config_label = #{configLabel}</if>
+            <if test="configDesc != null  and configDesc != ''"> and config_desc = #{configDesc}</if>
+            <if test="sort != null "> and sort = #{sort}</if>
+        </where>
+    </select>
+    
+    <select id="selectTAppConfigById" parameterType="Long" resultMap="TAppConfigResult">
+        <include refid="selectTAppConfigVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertTAppConfig" parameterType="TAppConfig" useGeneratedKeys="true" keyProperty="id">
+        insert into t_app_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="appId != null and appId != ''">app_id,</if>
+            <if test="configKey != null and configKey != ''">config_key,</if>
+            <if test="configValue != null">config_value,</if>
+            <if test="configType != null">config_type,</if>
+            <if test="configLabel != null">config_label,</if>
+            <if test="configDesc != null">config_desc,</if>
+            <if test="sort != null">sort,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="appId != null and appId != ''">#{appId},</if>
+            <if test="configKey != null and configKey != ''">#{configKey},</if>
+            <if test="configValue != null">#{configValue},</if>
+            <if test="configType != null">#{configType},</if>
+            <if test="configLabel != null">#{configLabel},</if>
+            <if test="configDesc != null">#{configDesc},</if>
+            <if test="sort != null">#{sort},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateTAppConfig" parameterType="TAppConfig">
+        update t_app_config
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="appId != null and appId != ''">app_id = #{appId},</if>
+            <if test="configKey != null and configKey != ''">config_key = #{configKey},</if>
+            <if test="configValue != null">config_value = #{configValue},</if>
+            <if test="configType != null">config_type = #{configType},</if>
+            <if test="configLabel != null">config_label = #{configLabel},</if>
+            <if test="configDesc != null">config_desc = #{configDesc},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteTAppConfigById" parameterType="Long">
+        delete from t_app_config where id = #{id}
+    </delete>
+
+    <delete id="deleteTAppConfigByIds" parameterType="String">
+        delete from t_app_config where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

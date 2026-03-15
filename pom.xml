@@ -231,6 +231,7 @@
         <module>taskmgt</module>
         <module>ruoyi-data</module>
         <module>robots</module>
+        <module>ruoyi-app</module>
     </modules>
     <packaging>pom</packaging>
 

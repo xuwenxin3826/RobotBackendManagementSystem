@@ -4,7 +4,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.robots.mapper.RobotsMapper">
     
-    <resultMap type="Robots" id="RobotsResult">
+    <resultMap type="Robot" id="RobotsResult">
         <result property="id"    column="id"    />
         <result property="code"    column="code"    />
         <result property="name"    column="name"    />
@@ -23,7 +23,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select id, code, name, group_id, manufacturer, production_date, area, status, hardware_status, task_status, battery,  created_at from robots
     </sql>
 
-    <select id="selectRobotsList" parameterType="Robots" resultMap="RobotsResult">
+    <select id="selectRobotsList" parameterType="Robot" resultMap="RobotsResult">
         <include refid="selectRobotsVo"/>
         <where>  
             <if test="groupId != null  and groupId != ''"> and group_id = #{groupId}</if>
@@ -68,7 +68,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateRobots" parameterType="Robots">
+    <update id="updateRobots" parameterType="Robot">
         update robots
         <trim prefix="SET" suffixOverrides=",">
             <if test="code != null and code != ''">code = #{code},</if>
@@ -91,7 +91,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteRobotsByIds" parameterType="String">
-        delete from robots where id in 
+        delete from robot where id in
         <foreach item="id" collection="array" open="(" separator="," close=")">
             #{id}
         </foreach>
