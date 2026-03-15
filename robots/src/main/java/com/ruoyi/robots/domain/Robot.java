@@ -33,7 +33,7 @@ public class Robot extends BaseEntity
 
     /** 所属分组ID（逻辑外键） */
     @Excel(name = "所属分组ID", readConverterExp = "逻=辑外键")
-    private String groupId;
+    private Long groupId;
 
     /** 生产厂家 */
     @Excel(name = "生产厂家")
@@ -103,12 +103,12 @@ public class Robot extends BaseEntity
         return name;
     }
 
-    public void setGroupId(String groupId) 
+    public void setGroupId(Long groupId)
     {
         this.groupId = groupId;
     }
 
-    public String getGroupId() 
+    public Long getGroupId()
     {
         return groupId;
     }
